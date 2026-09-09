@@ -6,6 +6,7 @@ import MessageInput from './components/MessageInput';
 import AuthModal from './components/AuthModal';
 import AccessDenied from './components/AccessDenied';
 import LoginPage from './components/LoginPage';
+import ProfilePage from './components/ProfilePage';
 import Toast from './components/Toast';
 import { INITIAL_ASSISTANT_MESSAGE } from './data/mockResponses';
 import { sendChatMessage } from './services/chatService';
@@ -22,6 +23,7 @@ export default function App() {
   const [isResetting, setIsResetting] = useState(false);
   const [currentUser, setCurrentUser] = useState(() => getCurrentUser());
   const [isAuthOpen, setIsAuthOpen] = useState(false);
+  const [view, setView] = useState('chat'); // 'chat' | 'profile'
   const [toast, setToast] = useState(null);
 
   // Show a toast notification and auto-clear
@@ -110,12 +112,28 @@ export default function App() {
   const handleLogout = useCallback(() => {
     clearUserSession();
     setCurrentUser(null);
+    setView('chat');
     showToast({
       type: 'info',
       title: 'Signed out',
       message: 'You have been signed out of the Campus Assistant.'
     });
   }, [showToast]);
+
+  // Open the My Profile page
+  const handleOpenProfile = useCallback(() => {
+    setView('profile');
+  }, []);
+
+  // Return to the chat view
+  const handleBackToChat = useCallback(() => {
+    setView('chat');
+  }, []);
+
+  // Apply updated profile details returned by the ProfilePage
+  const handleProfileSaved = useCallback((updatedUser) => {
+    setCurrentUser(updatedUser);
+  }, []);
 
   return currentUser ? (
     <div className="flex flex-col h-screen max-h-screen bg-slate-100/70 font-sans text-slate-800 antialiased">
@@ -126,30 +144,43 @@ export default function App() {
         user={currentUser}
         onOpenLogin={handleOpenLogin}
         onLogout={handleLogout}
+        onOpenProfile={handleOpenProfile}
       />
 
-      {/* 2. Chat Area — replaced by Access Restricted screen for unenrolled users */}
-      {!isEnrolledUser(currentUser) ? (
-        <AccessDenied user={currentUser} onLogout={handleLogout} />
+      {/* 2. My Profile page */}
+      {view === 'profile' ? (
+        <ProfilePage
+          user={currentUser}
+          onBack={handleBackToChat}
+          onSaved={handleProfileSaved}
+          showToast={showToast}
+        />
       ) : (
-        <main className="flex-1 flex flex-col min-h-0 bg-slate-50/50">
-          <ChatWindow
-            messages={messages}
-            isTyping={isTyping}
-          />
+        <>
+          {/* 3. Chat Area — replaced by Access Restricted screen for unenrolled users */}
+          {!isEnrolledUser(currentUser) ? (
+            <AccessDenied user={currentUser} onLogout={handleLogout} />
+          ) : (
+            <main className="flex-1 flex flex-col min-h-0 bg-slate-50/50">
+              <ChatWindow
+                messages={messages}
+                isTyping={isTyping}
+              />
 
-          {/* 3. Suggested Questions */}
-          <SuggestedQuestions
-            onSelectQuestion={handleSelectQuestion}
-            disabled={isTyping}
-          />
+              {/* 4. Suggested Questions */}
+              <SuggestedQuestions
+                onSelectQuestion={handleSelectQuestion}
+                disabled={isTyping}
+              />
 
-          {/* 4. Message Input */}
-          <MessageInput
-            onSendMessage={handleSendMessage}
-            disabled={isTyping}
-          />
-        </main>
+              {/* 5. Message Input */}
+              <MessageInput
+                onSendMessage={handleSendMessage}
+                disabled={isTyping}
+              />
+            </main>
+          )}
+        </>
       )}
 
       {/* Auth Modal (kept for legacy header quick-login path) */}

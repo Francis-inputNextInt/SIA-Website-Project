@@ -10,7 +10,8 @@ import {
   clearUserSession,
   isEnrolledUser,
   isPersonalEmail,
-  ALLOWED_ROLES
+  ALLOWED_ROLES,
+  updateUserProfile
 } from '../src/services/authService.js';
 
 console.log('--- RUNNING AUTH SERVICE TEST SUITE ---');
@@ -168,4 +169,48 @@ console.log('✓ Test: isPersonalEmail detection');
 assert.strictEqual(isPersonalEmail('user@gmail.com'), true);
 assert.strictEqual(isPersonalEmail('user@campus.edu'), false);
 
-console.log('\n🎉 ALL 18 AUTH SERVICE TESTS PASSED SUCCESSFULLY!');
+// 19. updateUserProfile: update name & persist
+console.log('✓ Test: Update profile name');
+const upd = await loginUser({ identifier: 'student@campus.edu', password: 'password123', rememberMe: false });
+const renamed = updateUserProfile({ name: 'Maria Clara Santos' });
+assert.strictEqual(renamed.name, 'Maria Clara Santos');
+assert.strictEqual(renamed.initials, 'MC');
+assert.strictEqual(getCurrentUser().name, 'Maria Clara Santos');
+
+// 20. updateUserProfile: update email to a university domain
+console.log('✓ Test: Update profile email keeps enrollment');
+const emailUpd = updateUserProfile({ email: 'maria.santos@campus.edu' });
+assert.strictEqual(emailUpd.email, 'maria.santos@campus.edu');
+assert.strictEqual(isEnrolledUser(emailUpd), true);
+
+// 21. updateUserProfile: switching to personal email => unenrolled Applicant
+console.log('✓ Test: Update to personal email revokes enrollment');
+const personalUpd = updateUserProfile({ email: 'maria@yahoo.com' });
+assert.strictEqual(personalUpd.role, 'Applicant');
+assert.strictEqual(isEnrolledUser(personalUpd), false);
+
+// 22. updateUserProfile: invalid email throws
+console.log('✓ Test: Invalid profile email throws');
+let threwProfile = false;
+try {
+  updateUserProfile({ email: 'not-an-email' });
+} catch (err) {
+  threwProfile = true;
+  assert.ok(err.message.length > 0);
+}
+assert.strictEqual(threwProfile, true);
+
+// 23. updateUserProfile: invalid (too-short) name throws
+console.log('✓ Test: Invalid profile name throws');
+let threwName = false;
+try {
+  updateUserProfile({ name: 'A' });
+} catch (err) {
+  threwName = true;
+}
+assert.strictEqual(threwName, true);
+
+// Clear session so subsequent test files start clean
+clearUserSession();
+
+console.log('🎉 ALL 23 AUTH SERVICE TESTS PASSED SUCCESSFULLY!');

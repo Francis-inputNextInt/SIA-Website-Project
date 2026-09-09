@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { RotateCcw, GraduationCap, LogIn, LogOut, ChevronDown } from 'lucide-react';
+import { RotateCcw, GraduationCap, LogIn, LogOut, ChevronDown, UserRound } from 'lucide-react';
 
-export default function Header({ onNewConversation, isResetting, user, onOpenLogin, onLogout }) {
+export default function Header({ onNewConversation, isResetting, user, onOpenLogin, onLogout, onOpenProfile }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef(null);
 
@@ -73,6 +73,11 @@ export default function Header({ onNewConversation, isResetting, user, onOpenLog
                       <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-slate-100 text-slate-600 border border-slate-200">{user.studentId}</span>
                     </div>
                   </div>
+                  <button type="button" onClick={() => { setMenuOpen(false); onOpenProfile(); }}
+                    className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium text-slate-700 hover:bg-blue-50 active:bg-blue-100 transition-colors">
+                    <UserRound className="w-4 h-4 text-blue-600" />
+                    My Profile
+                  </button>
                   <button type="button" onClick={() => { setMenuOpen(false); onLogout(); }}
                     className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium text-rose-600 hover:bg-rose-50 active:bg-rose-100 transition-colors">
                     <LogOut className="w-4 h-4" />

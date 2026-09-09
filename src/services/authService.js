@@ -238,6 +238,83 @@ export async function sendPasswordReset(email) {
   };
 }
 
+/**
+ * Recompute the user's display initials from a full name.
+ * Mirrors the logic used at login/registration.
+ */
+function deriveInitials(name) {
+  const trimmed = String(name || '').trim();
+  if (!trimmed) return '';
+  return trimmed
+    .split(' ')
+    .filter(Boolean)
+    .map((part) => part[0])
+    .join('')
+    .substring(0, 2)
+    .toUpperCase() || 'U';
+}
+
+/**
+ * Update the currently logged-in user's editable profile fields and persist
+ * the changes to session/local storage. Returns the updated user object.
+ *
+ * @param {Object} updates   Partial fields to change: { name, email, department, yearLevel, ... }
+ * @returns {Object}         The merged, persisted user object.
+ */
+export function updateUserProfile(updates = {}) {
+  const current = getCurrentUser();
+  if (!current) {
+    throw new Error('No active session. Please sign in to update your profile.');
+  }
+
+  // Preserve enrollment semantics: if the email changes to a personal /
+  // non-university domain, the account becomes an unenrolled Applicant.
+  const updated = {
+    ...current,
+    ...updates
+  };
+
+  // Normalize & validate name
+  if (updates.name !== undefined) {
+    const trimmedName = String(updates.name).trim();
+    if (trimmedName.length < 2) {
+      throw new Error('Please provide your full name (minimum 2 characters).');
+    }
+    updated.name = trimmedName;
+    updated.initials = deriveInitials(trimmedName);
+  }
+
+  // Normalize & validate email
+  if (updates.email !== undefined) {
+    const normalizedEmail = String(updates.email).trim().toLowerCase();
+    if (!isValidEmail(normalizedEmail)) {
+      throw new Error('Please provide a valid email address.');
+    }
+    updated.email = normalizedEmail;
+
+    // Re-apply the enrollment gate when the email changes.
+    if (isPersonalEmail(normalizedEmail)) {
+      updated.role = 'Applicant';
+      if (!updated.enrolled) updated.enrolled = false;
+    } else if (!ALLOWED_ROLES.includes(updated.role)) {
+      // Promoted back to an enrolled member when switching to university email.
+      updated.role = 'Student';
+      if (updated.enrolled === false) delete updated.enrolled;
+    }
+  }
+
+  // Normalize optional free-text fields
+  if (updates.department !== undefined) {
+    updated.department = String(updates.department).trim() || updated.department;
+  }
+  if (updates.yearLevel !== undefined) {
+    updated.yearLevel = String(updates.yearLevel).trim() || updated.yearLevel;
+  }
+
+  saveUserSession(updated);
+  return updated;
+}
+
 export function clearUserSession() {
   inMemoryUser = null;
   if (typeof window === 'undefined') return;
