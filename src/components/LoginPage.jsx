@@ -47,7 +47,18 @@ export default function LoginPage({ onLogin }) {
   const meta = VIEW_META[view];
 
   return (
-    <div className="min-h-screen w-full bg-slate-950 relative overflow-hidden flex flex-col">
+    <div
+      className="min-h-screen w-full bg-slate-950 relative overflow-hidden flex flex-col"
+      style={{
+        // Campus background image + dark overlay para readable ang text.
+        // Palitan ang /images/campus-bg.jpg ng sarili mong larawan para ma-customize.
+        backgroundImage: "linear-gradient(rgba(2, 6, 23, 0.82), rgba(15, 23, 42, 0.9)), url('/images/campus-bg.jpg')",
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
+        backgroundAttachment: 'fixed'
+      }}
+    >
       {/* Decorative gradient blobs */}
       <div className="pointer-events-none absolute -top-40 -left-40 w-[500px] h-[500px] rounded-full bg-blue-600/20 blur-3xl" />
       <div className="pointer-events-none absolute -bottom-40 -right-40 w-[500px] h-[500px] rounded-full bg-indigo-600/15 blur-3xl" />
