@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { X, GraduationCap, Eye, EyeOff, LogIn, UserPlus, KeyRound, Mail, User, IdCard, ArrowRight, CheckCircle2, ShieldAlert, Loader2 } from 'lucide-react';
-import { DEMO_ACCOUNTS, loginUser, registerUser, sendPasswordReset } from '../services/authService';
+import { X, GraduationCap, Eye, EyeOff, LogIn, UserPlus, KeyRound, Mail, User, IdCard, ArrowRight, CheckCircle2, ShieldAlert, ShieldCheck, RefreshCw, Loader2 } from 'lucide-react';
+import { DEMO_ACCOUNTS, loginUser, registerUser, sendPasswordReset, verifySignupOtp } from '../services/authService';
 
 const IN = 'w-full bg-white text-slate-800 placeholder-slate-400 text-sm px-3.5 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all disabled:bg-slate-50 disabled:opacity-60';
 
@@ -46,6 +46,9 @@ export default function AuthModal({ open, onClose, onLogin }) {
   const [sup, setSup] = useState('');
   const [cfp, setCfp] = useState('');
   const [fem, setFem] = useState('');
+  const [verifyEmail, setVerifyEmail] = useState('');
+  const [fcode, setFcode] = useState('');
+  const [regSnapshot, setRegSnapshot] = useState(null);
 
   // Run the "drop down" exit animation, then ask the parent to close.
   const triggerClose = useCallback(() => {
@@ -63,6 +66,7 @@ export default function AuthModal({ open, onClose, onLogin }) {
       setBusy(false); setErr(''); setOk('');
       setFid(''); setFpw(''); setFn(''); setFe('');
       setRol('Student'); setDep(''); setSup(''); setCfp(''); setFem('');
+      setVerifyEmail(''); setFcode(''); setRegSnapshot(null);
     }
   }, [open]);
 
@@ -91,18 +95,20 @@ return (
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-sky-500 flex items-center justify-center text-white shadow-md shadow-blue-500/20"><GraduationCap className="w-5 h-5" /></div>
             <div>
-              <h2 className="text-base sm:text-lg font-bold text-slate-900 tracking-tight">{view === 'signin' ? 'Welcome Back' : view === 'signup' ? 'Create Your Account' : 'Reset Your Password'}</h2>
-              <p className="text-[11px] sm:text-xs text-slate-500 font-medium">{view === 'signin' ? 'AI Campus Assistant — Secure Login' : view === 'signup' ? 'Join the Campus Digital Hub' : "We'll guide you through recovery"}</p>
+              <h2 className="text-base sm:text-lg font-bold text-slate-900 tracking-tight">{view === 'signin' ? 'Welcome Back' : view === 'signup' ? 'Create Your Account' : view === 'verify' ? 'Confirm Your Email' : 'Reset Your Password'}</h2>
+              <p className="text-[11px] sm:text-xs text-slate-500 font-medium">{view === 'signin' ? 'AI Campus Assistant — Secure Login' : view === 'signup' ? 'Join the Campus Digital Hub' : view === 'verify' ? 'Enter the 6-digit code we sent to your email' : "We'll guide you through recovery"}</p>
             </div>
           </div>
           <button type="button" onClick={() => !busy && triggerClose()} disabled={busy} className="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors disabled:opacity-40"><X className="w-5 h-5" /></button>
         </div>
         <div className="px-6 py-5 space-y-4">
           {view === 'signin' && <SignIn state={{ fid: fid, fpw: fpw, rem: rem }} setters={{ setFid: setFid, setFpw: setFpw, setRem: setRem, spw: spw, setSpw: setSpw, busy: busy, setBusy: setBusy, err: err, ok: ok, setErr: setErr, setOk: setOk }} onLogin={onLogin} onClose={triggerClose} go={go} />}
-          {view === 'signup' && <SignUp state={{ fn: fn, fe: fe, rol: rol, dep: dep, sup: sup, cfp: cfp }} setters={{ setFn: setFn, setFe: setFe, setRol: setRol, setDep: setDep, setSup: setSup, setCfp: setCfp, spw: spw, setSpw: setSpw, scp: scp, setScp: setScp, busy: busy, setBusy: setBusy, err: err, ok: ok, setErr: setErr, setOk: setOk }} onLogin={onLogin} onClose={triggerClose} />}
+          {view === 'signup' && <SignUp state={{ fn: fn, fe: fe, rol: rol, dep: dep, sup: sup, cfp: cfp }} setters={{ setFn: setFn, setFe: setFe, setRol: setRol, setDep: setDep, setSup: setSup, setCfp: setCfp, spw: spw, setSpw: setSpw, scp: scp, setScp: setScp, busy: busy, setBusy: setBusy, err: err, ok: ok, setErr: setErr, setOk: setOk, setVerifyEmail: setVerifyEmail, setRegSnapshot: setRegSnapshot }} onLogin={onLogin} onClose={triggerClose} go={go} />}
           {view === 'forgot' && <Forgot state={{ fem: fem }} setters={{ setFem: setFem, busy: busy, setBusy: setBusy, err: err, ok: ok, setErr: setErr, setOk: setOk }} />}
+          {view === 'verify' && <Verify state={{ verifyEmail: verifyEmail, fcode: fcode, regSnapshot: regSnapshot }} setters={{ setFcode: setFcode, busy: busy, setBusy: setBusy, err: err, ok: ok, setErr: setErr, setOk: setOk }} onLogin={onLogin} onClose={triggerClose} go={go} />}
           <div className="pt-2 pb-1 border-t border-slate-100 text-center text-xs sm:text-sm text-slate-500 font-medium">
-            {view !== 'signin' && <p className="mb-1.5">Already have an account? <button type="button" onClick={() => go('signin')} className="font-semibold text-blue-600 hover:underline">Sign in here</button></p>}
+            {view !== 'signin' && view !== 'verify' && <p className="mb-1.5">Already have an account? <button type="button" onClick={() => go('signin')} className="font-semibold text-blue-600 hover:underline">Sign in here</button></p>}
+            {view === 'verify' && <p>Changed your mind? <button type="button" onClick={() => go('signin')} className="font-semibold text-blue-600 hover:underline">Sign in instead</button></p>}
             {view === 'signin' && <p>New to the campus hub? <button type="button" onClick={() => go('signup')} className="font-semibold text-blue-600 hover:underline">Create an account</button></p>}
             {view === 'forgot' && <button type="button" onClick={() => go('signin')} className="font-semibold text-blue-600 hover:underline">← Back to Sign in</button>}
           </div>
@@ -191,9 +197,9 @@ function SignIn({ state, setters, onLogin, onClose, go }) {
   );
 }
 /* ===== Sign Up ===== */
-function SignUp({ state, setters, onLogin, onClose }) {
+function SignUp({ state, setters, onLogin, onClose, go }) {
   const { fn, fe, rol, dep, sup, cfp } = state;
-  const { setFn, setFe, setRol, setDep, setSup, setCfp, spw, setSpw, scp, setScp, busy, setBusy, err, ok, setErr, setOk } = setters;
+  const { setFn, setFe, setRol, setDep, setSup, setCfp, spw, setSpw, scp, setScp, busy, setBusy, err, ok, setErr, setOk, setVerifyEmail = () => {}, setRegSnapshot = () => {} } = setters;
 
   const submit = async (e) => {
     e.preventDefault();
@@ -204,10 +210,18 @@ function SignUp({ state, setters, onLogin, onClose }) {
     if (sup !== cfp) { setErr('Passwords do not match.'); return; }
     setBusy(true);
     try {
-      const user = await registerUser({ name: fn, email: fe, role: rol, department: dep, password: sup });
-      onLogin(user);
-      setOk(`Account created. Welcome, ${user.name.split(' ')[0]}!`);
-      setTimeout(() => onClose(), 900);
+      const result = await registerUser({ name: fn, email: fe, role: rol, department: dep, password: sup });
+      if (result.needsEmailVerification) {
+        // Supabase emailed a 6-digit code — show the in-app verification screen
+        // instead of sending the user to their inbox for a redirect.
+        setVerifyEmail(result.email);
+        setRegSnapshot({ name: fn, email: fe, role: rol, department: dep, password: sup });
+        setTimeout(() => go('verify'), 500);
+      } else {
+        onLogin(result);
+        setOk(`Account created. Welcome, ${result.name.split(' ')[0]}!`);
+        setTimeout(() => onClose(), 900);
+      }
     } catch (err2) {
       setErr(err2.message);
     } finally {
@@ -264,6 +278,85 @@ function SignUp({ state, setters, onLogin, onClose }) {
     </form>
   );
 }
+/* ===== Email Verification (6-digit code) ===== */
+function Verify({ state, setters, onLogin, onClose, go }) {
+  const { verifyEmail, fcode, regSnapshot } = state;
+  const { setFcode, busy, setBusy, err, ok, setErr, setOk } = setters;
+
+  const submit = async (e) => {
+    e.preventDefault();
+    setErr(''); setOk('');
+    const code = String(fcode || '').replace(/\D/g, '');
+    if (code.length !== 6) {
+      setErr('Please enter the 6-digit code from your email.');
+      return;
+    }
+    setBusy(true);
+    try {
+      const user = await verifySignupOtp({ email: verifyEmail, token: code });
+      onLogin(user);
+      setOk(`Email confirmed! Welcome, ${user.name.split(' ')[0]}!`);
+      setTimeout(() => onClose(), 900);
+    } catch (err2) {
+      setErr(err2.message);
+    } finally {
+      setTimeout(() => setBusy(false), 900);
+    }
+  };
+
+  const resend = async () => {
+    if (!regSnapshot) { setErr('Registration details are missing. Please sign up again.'); return; }
+    setErr(''); setOk('');
+    setBusy(true);
+    try {
+      // Re-running signUp resends the email with a fresh 6-digit code.
+      await registerUser(regSnapshot);
+      setOk(`A new 6-digit code was sent to ${verifyEmail}. Check your inbox.`);
+    } catch (err2) {
+      setErr(err2.message);
+    } finally {
+      setTimeout(() => setBusy(false), 900);
+    }
+  };
+
+  return (
+    <form onSubmit={submit} className="space-y-4">
+      <div className="p-3.5 rounded-xl bg-blue-50/70 border border-blue-100 text-slate-600 text-xs sm:text-sm font-medium leading-relaxed">
+        Enter the <span className="font-bold text-blue-700">6-digit code</span> we sent to{' '}
+        <span className="font-semibold text-slate-800">{verifyEmail}</span> to prove that this email is really yours.
+      </div>
+      <div>
+        <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-600 mb-1.5">
+          <KeyRound className="w-3.5 h-3.5 text-blue-500" /> 6-Digit Verification Code
+        </label>
+        <input
+          type="text"
+          inputMode="numeric"
+          autoComplete="one-time-code"
+          maxLength={6}
+          value={fcode}
+          onChange={(e) => setFcode(e.target.value.replace(/\D/g, ''))}
+          placeholder="000000"
+          autoFocus
+          disabled={busy}
+          className={`${IN} text-center text-lg font-bold tracking-[0.5em]`}
+        />
+      </div>
+      {err && <Err m={err} />}
+      {ok && <Ok m={ok} />}
+      <SubmitBtn busy={busy} loadingText="Verifying code..."><ShieldCheck className="w-4 h-4" /> Verify &amp; Complete Registration</SubmitBtn>
+      <div className="pt-1 flex items-center justify-between text-xs font-medium text-slate-500">
+        <button type="button" onClick={resend} disabled={busy} className="inline-flex items-center gap-1 text-blue-600 hover:underline disabled:opacity-50 disabled:cursor-not-allowed">
+          <RefreshCw className="w-3.5 h-3.5" /> Resend code
+        </button>
+        <button type="button" onClick={() => go('signin')} disabled={busy} className="text-slate-500 hover:underline disabled:opacity-50 disabled:cursor-not-allowed">
+          Use a different email
+        </button>
+      </div>
+    </form>
+  );
+}
+
 /* ===== Forgot Password ===== */
 function Forgot({ state, setters }) {
   const { fem } = state;

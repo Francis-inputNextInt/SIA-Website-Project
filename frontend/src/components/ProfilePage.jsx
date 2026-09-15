@@ -32,7 +32,7 @@ export default function ProfilePage({ user, onBack, onSaved, showToast }) {
 
   const isFaculty = user.role === 'Faculty' || user.role === 'Staff';
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setErr('');
 
@@ -49,7 +49,7 @@ export default function ProfilePage({ user, onBack, onSaved, showToast }) {
 
     setSaving(true);
     try {
-      const updated = updateUserProfile({ name, email, department, yearLevel });
+      const updated = await updateUserProfile({ name, email, department, yearLevel });
       setSaving(false);
       if (showToast) {
         showToast({
@@ -196,7 +196,7 @@ export default function ProfilePage({ user, onBack, onSaved, showToast }) {
           <div className="mt-6 pt-5 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3">
             <p className="text-xs text-slate-400 flex items-center gap-1.5">
               <Lock className="w-3.5 h-3.5" />
-              Changes are saved to this device's session.
+              Changes are saved to your Supabase account.
             </p>
             <div className="flex items-center gap-3">
               <button

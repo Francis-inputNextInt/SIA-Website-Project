@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { GraduationCap, Sparkles, BookOpen, Clock, ShieldCheck } from 'lucide-react';
-import { SignInView, SignUpView, ForgotView } from './auth/AuthViews';
+import { SignInView, SignUpView, ForgotView, VerifyView } from './auth/AuthViews';
 
 const VIEWS = [
   { key: 'signin', label: 'Sign In' },
@@ -12,6 +12,7 @@ const VIEW_META = {
   signin: { title: 'Welcome Back', subtitle: 'Sign in to the AI Campus Assistant' },
   signup: { title: 'Create Account', subtitle: 'Join the Campus Digital Hub' },
   forgot: { title: 'Reset Password', subtitle: "We'll guide you through recovery" },
+  verify: { title: 'Confirm Your Email', subtitle: 'Enter the 6-digit code we sent to your email' },
 };
 
 const FEATURES = [
@@ -37,6 +38,9 @@ export default function LoginPage({ onLogin }) {
   const [sup, setSup] = useState('');
   const [cfp, setCfp] = useState('');
   const [fem, setFem] = useState('');
+  const [verifyEmail, setVerifyEmail] = useState('');
+  const [fcode, setFcode] = useState('');
+  const [regSnapshot, setRegSnapshot] = useState(null);
 
   const go = (v) => {
     if (busy) return;
@@ -125,7 +129,8 @@ export default function LoginPage({ onLogin }) {
                 </div>
               </div>
 
-              {/* Tab bar */}
+              {/* Tab bar (hidden while verifying the email code) */}
+              {view !== 'verify' && (
               <div className="flex bg-slate-100 rounded-xl p-1 mb-6">
                 {VIEWS.map((t) => (
                   <button
@@ -143,6 +148,7 @@ export default function LoginPage({ onLogin }) {
                   </button>
                 ))}
               </div>
+              )}
 
               {/* View content */}
               {view === 'signin' && (
@@ -157,15 +163,25 @@ export default function LoginPage({ onLogin }) {
               {view === 'signup' && (
                 <SignUpView
                   state={{ fn, fe, rol, dep, sup, cfp }}
-                  setters={{ setFn, setFe, setRol, setDep, setSup, setCfp, spw, setSpw, scp, setScp, busy, setBusy, err, ok, setErr, setOk }}
+                  setters={{ setFn, setFe, setRol, setDep, setSup, setCfp, spw, setSpw, scp, setScp, busy, setBusy, err, ok, setErr, setOk, setVerifyEmail, setRegSnapshot }}
                   onLogin={onLogin}
                   onClose={() => {}}
+                  go={go}
                 />
               )}
               {view === 'forgot' && (
                 <ForgotView
                   state={{ fem }}
                   setters={{ setFem, busy, setBusy, err, ok, setErr, setOk }}
+                />
+              )}
+              {view === 'verify' && (
+                <VerifyView
+                  state={{ verifyEmail, fcode, regSnapshot }}
+                  setters={{ setFcode, busy, setBusy, err, ok, setErr, setOk }}
+                  onLogin={onLogin}
+                  onClose={() => {}}
+                  go={go}
                 />
               )}
 
@@ -183,6 +199,9 @@ export default function LoginPage({ onLogin }) {
                 )}
                 {view === 'forgot' && (
                   <button type="button" onClick={() => go('signin')} className="font-semibold text-blue-600 hover:underline">← Back to Sign in</button>
+                )}
+                {view === 'verify' && (
+                  <p>Changed your mind? <button type="button" onClick={() => go('signin')} className="font-semibold text-blue-600 hover:underline">Sign in instead</button></p>
                 )}
               </div>
             </div>

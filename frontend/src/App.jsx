@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import Header from './components/Header';
+import Sidebar from './components/Sidebar';
 import ChatWindow from './components/ChatWindow';
 import SuggestedQuestions from './components/SuggestedQuestions';
 import MessageInput from './components/MessageInput';
@@ -26,6 +27,7 @@ export default function App() {
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [view, setView] = useState('dashboard'); // 'dashboard' | 'chat' | 'profile'
   const [toast, setToast] = useState(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   // Show a toast notification and auto-clear
   const showToast = useCallback(({ type = 'success', title, message, duration }) => {
@@ -137,6 +139,10 @@ export default function App() {
   // Navigate to chat (AI Assistant)
   const handleGoToChat = useCallback(() => setView('chat'), []);
 
+  // Toggle sidebar
+  const handleToggleSidebar = useCallback(() => setSidebarOpen((prev) => !prev), []);
+  const handleCloseSidebar = useCallback(() => setSidebarOpen(false), []);
+
   // Apply updated profile details returned by the ProfilePage
   const handleProfileSaved = useCallback((updatedUser) => {
     setCurrentUser(updatedUser);
@@ -155,6 +161,17 @@ export default function App() {
         onOpenLogin={handleOpenLogin}
         onLogout={handleLogout}
         onOpenProfile={handleOpenProfile}
+        onToggleSidebar={handleToggleSidebar}
+      />
+
+      {/* Sidebar — left side, toggleable */}
+      <Sidebar
+        isOpen={sidebarOpen}
+        onClose={handleCloseSidebar}
+        view={view}
+        onGoToDashboard={handleGoToDashboard}
+        onGoToChat={handleGoToChat}
+        user={currentUser}
       />
 
       {/* Page Content — unenrolled users always see Access Denied */}

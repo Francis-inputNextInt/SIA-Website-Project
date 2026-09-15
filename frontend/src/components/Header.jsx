@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { RotateCcw, GraduationCap, LogIn, LogOut, ChevronDown, UserRound, Home, MessageSquare } from 'lucide-react';
+import { RotateCcw, GraduationCap, LogIn, LogOut, ChevronDown, UserRound, Home, MessageSquare, Menu } from 'lucide-react';
 
-export default function Header({ view, onGoToDashboard, onGoToChat, onNewConversation, isResetting, user, onOpenLogin, onLogout, onOpenProfile }) {
+export default function Header({ view, onGoToDashboard, onGoToChat, onNewConversation, isResetting, user, onOpenLogin, onLogout, onOpenProfile, onToggleSidebar }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef(null);
 
@@ -16,61 +16,46 @@ export default function Header({ view, onGoToDashboard, onGoToChat, onNewConvers
   return (
     <header className="bg-white border-b border-slate-200/80 shadow-sm sticky top-0 z-30 transition-all">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 py-3.5 flex items-center justify-between">
-        {/* Brand — clickable, navigates to dashboard */}
-        <button
-          type="button"
-          onClick={onGoToDashboard}
-          className="flex items-center space-x-3.5 focus:outline-none rounded-xl -ml-2 pl-2 pr-3 py-1 transition-all hover:bg-slate-50"
-        >
-          <div className="relative">
-            <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-sky-500 flex items-center justify-center text-white shadow-md shadow-blue-500/20 ring-2 ring-blue-100">
-              <GraduationCap className="w-6 h-6" />
-            </div>
-            <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-500 border-2 border-white rounded-full"></span>
-          </div>
-          <div className="text-left">
-            <div className="flex items-center gap-2">
-              <h1 className="text-lg sm:text-xl font-bold text-slate-900 tracking-tight flex items-center gap-1.5">
-                AI Campus Assistant
-              </h1>
-              <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/60 shadow-xs">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-status-pulse"></span>
-                <span>Online</span>
-              </span>
-            </div>
-            <p className="text-xs sm:text-sm text-slate-500 font-medium">
-              {user ? `Welcome back, ${user.name.split(' ')[0]}!` : 'Your smart companion for campus information'}
-            </p>
-          </div>
-        </button>
+        {/* Left: Hamburger + Brand */}
+        <div className="flex items-center gap-2">
+          {/* Sidebar toggle button */}
+          <button
+            type="button"
+            onClick={onToggleSidebar}
+            className="flex items-center justify-center w-9 h-9 rounded-xl text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+            aria-label="Toggle sidebar"
+          >
+            <Menu className="w-5 h-5" />
+          </button>
 
-        {/* Navigation — hidden on mobile */}
-        <nav className="hidden md:flex items-center gap-1">
+          {/* Brand — clickable, navigates to dashboard */}
           <button
             type="button"
             onClick={onGoToDashboard}
-            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all duration-150 ${
-              view === 'dashboard'
-                ? 'bg-blue-50 text-blue-700 border border-blue-200/60'
-                : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900 border border-transparent'
-            }`}
+            className="flex items-center space-x-3.5 focus:outline-none rounded-xl -ml-2 pl-2 pr-3 py-1 transition-all hover:bg-slate-50"
           >
-            <Home className="w-3.5 h-3.5" />
-            Dashboard
+            <div className="relative">
+              <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-sky-500 flex items-center justify-center text-white shadow-md shadow-blue-500/20 ring-2 ring-blue-100">
+                <GraduationCap className="w-6 h-6" />
+              </div>
+              <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-500 border-2 border-white rounded-full"></span>
+            </div>
+            <div className="text-left">
+              <div className="flex items-center gap-2">
+                <h1 className="text-lg sm:text-xl font-bold text-slate-900 tracking-tight flex items-center gap-1.5">
+                  AI Campus Assistant
+                </h1>
+                <span className="hidden sm:inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/60 shadow-xs">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-status-pulse"></span>
+                  <span>Online</span>
+                </span>
+              </div>
+              <p className="text-xs sm:text-sm text-slate-500 font-medium">
+                {user ? `Welcome back, ${user.name.split(' ')[0]}!` : 'Your smart companion for campus information'}
+              </p>
+            </div>
           </button>
-          <button
-            type="button"
-            onClick={onGoToChat}
-            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all duration-150 ${
-              view === 'chat'
-                ? 'bg-blue-50 text-blue-700 border border-blue-200/60'
-                : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900 border border-transparent'
-            }`}
-          >
-            <MessageSquare className="w-3.5 h-3.5" />
-            AI Assistant
-          </button>
-        </nav>
+        </div>
 
         {/* Actions */}
         <div className="flex items-center space-x-2">

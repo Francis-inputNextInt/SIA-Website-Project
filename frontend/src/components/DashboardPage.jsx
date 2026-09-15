@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   GraduationCap,
   Calendar,
@@ -242,6 +242,8 @@ function AnnouncementsSection() {
 /* ── Section: Quick Actions ───────────────────────────────── */
 
 function QuickActionsSection({ onGoToChat, onGoToProfile }) {
+  const [expandedId, setExpandedId] = useState(null);
+
   const actions = [
     { ...QUICK_ACTIONS[0], onClick: onGoToChat },
     { ...QUICK_ACTIONS[1], onClick: () => {} },
@@ -251,28 +253,45 @@ function QuickActionsSection({ onGoToChat, onGoToProfile }) {
 
   return (
     <section>
-      <div className="flex items-center gap-2 mb-4">
+      <div className="flex items-center gap-2 mb-3">
         <div className="p-1.5 rounded-lg bg-emerald-100">
           <Star className="w-4 h-4 text-emerald-600" />
         </div>
         <h2 className="text-sm sm:text-base font-bold text-slate-900 tracking-tight">Quick Actions</h2>
       </div>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
         {actions.map((action) => {
           const IconComp = ACTION_ICONS[action.icon] || MessageSquare;
           const colors = ACTION_COLORS[action.color] || ACTION_COLORS.blue;
+          const isExpanded = expandedId === action.id;
           return (
             <button
               key={action.id}
               type="button"
-              onClick={action.onClick}
-              className={`group flex flex-col items-center text-center p-4 sm:p-5 rounded-xl border ${colors.bg} ${colors.border} ${colors.hover} transition-all duration-150 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30`}
+              onClick={() => {
+                setExpandedId((prev) => (prev === action.id ? null : action.id));
+                action.onClick();
+              }}
+              onMouseEnter={() => setExpandedId(action.id)}
+              onMouseLeave={() => setExpandedId(null)}
+              className={`group flex flex-col items-center text-center p-3 sm:p-4 rounded-xl border ${colors.bg} ${colors.border} ${colors.hover} transition-all duration-200 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 ${isExpanded ? 'shadow-sm' : ''}`}
             >
-              <div className={`w-10 h-10 rounded-xl ${colors.icon} flex items-center justify-center mb-2.5 shadow-sm group-hover:scale-105 transition-transform`}>
-                <IconComp className="w-5 h-5" />
+              <div className={`w-8 h-8 sm:w-9 sm:h-9 rounded-lg ${colors.icon} flex items-center justify-center mb-1.5 sm:mb-2 shadow-sm group-hover:scale-105 transition-transform`}>
+                <IconComp className="w-4 h-4 sm:w-[18px] sm:h-[18px]" />
               </div>
-              <h3 className="text-xs sm:text-sm font-bold text-slate-900 leading-tight">{action.title}</h3>
-              <p className="text-[10px] sm:text-[11px] text-slate-500 font-medium mt-1 leading-snug line-clamp-2">{action.description}</p>
+              <h3 className="text-xs font-bold text-slate-900 leading-tight">{action.title}</h3>
+              {/* Description — hidden by default, expands on hover (desktop) or tap (mobile) */}
+              <div
+                className={`grid transition-all duration-200 ease-in-out group-hover:grid-rows-[1fr] group-hover:opacity-100 ${
+                  isExpanded ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+                }`}
+              >
+                <div className="overflow-hidden">
+                  <p className="text-[10px] sm:text-[11px] text-slate-500 font-medium leading-snug pt-1.5">
+                    {action.description}
+                  </p>
+                </div>
+              </div>
             </button>
           );
         })}
@@ -291,6 +310,11 @@ export default function DashboardPage({ user, onGoToChat, onGoToProfile }) {
         {/* Welcome Banner */}
         <WelcomeSection user={user} />
 
+        {/* Quick Actions — inilipat sa itaas para agad makita at ma-access */}
+        <div className="bg-white rounded-2xl border border-slate-200/80 p-4 sm:p-5 shadow-sm">
+          <QuickActionsSection onGoToChat={onGoToChat} onGoToProfile={onGoToProfile} />
+        </div>
+
         {/* Row 1: Schedule + Deadlines */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2">
@@ -305,16 +329,9 @@ export default function DashboardPage({ user, onGoToChat, onGoToProfile }) {
           </div>
         </div>
 
-        {/* Row 2: Announcements + Quick Actions */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2">
-            <div className="bg-white rounded-2xl border border-slate-200/80 p-4 sm:p-5 shadow-sm">
-              <AnnouncementsSection />
-            </div>
-          </div>
-          <div>
-            <QuickActionsSection onGoToChat={onGoToChat} onGoToProfile={onGoToProfile} />
-          </div>
+        {/* Announcements — full width */}
+        <div className="bg-white rounded-2xl border border-slate-200/80 p-4 sm:p-5 shadow-sm">
+          <AnnouncementsSection />
         </div>
 
       </div>
