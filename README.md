@@ -79,6 +79,15 @@ create trigger on_auth_user_created
 > **Tip for local testing:** For frictionless registration during development you can turn off
 > **Authentication → Sign In / Up → Email provider → "Confirm email"**. The app handles
 > both modes: when "Confirm email" is ON, the user enters a 6-digit verification code right in the website (no email-link redirect needed).
+>
+> **⚠️ IMPORTANT — No 6-digit code screen?** If users get logged in immediately after signing up
+> (no "Enter the 6-digit code" screen appears), that means **"Confirm email" is OFF** in the Supabase
+> dashboard. You can verify this in the browser console — `authService` logs a clear info message
+> when this happens. To require email verification:
+> 1. **Supabase Dashboard → Project Settings → Authentication → SMTP Settings** → enable a custom SMTP
+>    (e.g. Gmail SMTP) so emails are reliably delivered (free tier is limited to 2 emails/hour).
+> 2. **Supabase Dashboard → Authentication → Providers → Email** → turn **"Confirm email"** ON.
+> 3. Sign up again — the 6-digit verification screen will now appear.
 
 > **Supabase email template note:** Go to **Authentication → Email Templates → "Confirm signup"**
 > and make sure the email body includes `{{ .Token }}` so that the 6-digit code is shown to the user.

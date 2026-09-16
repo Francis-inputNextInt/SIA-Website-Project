@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { X, GraduationCap, Eye, EyeOff, LogIn, UserPlus, KeyRound, Mail, User, IdCard, ArrowRight, CheckCircle2, ShieldAlert, ShieldCheck, RefreshCw, Loader2 } from 'lucide-react';
 import { DEMO_ACCOUNTS, loginUser, registerUser, sendPasswordReset, verifySignupOtp } from '../services/authService';
+import CaptchaCheckbox from './CaptchaCheckbox';
 
 const IN = 'w-full bg-white text-slate-800 placeholder-slate-400 text-sm px-3.5 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all disabled:bg-slate-50 disabled:opacity-60';
 
@@ -122,12 +123,17 @@ return (
 function SignIn({ state, setters, onLogin, onClose, go }) {
   const { fid, fpw, rem } = state;
   const { setFid, setFpw, setRem, spw, setSpw, busy, setBusy, err, ok, setErr, setOk } = setters;
+  const [captchaToken, setCaptchaToken] = useState(null);
 
   const submit = async (e) => {
     e.preventDefault();
     setErr(''); setOk('');
     if (!fid.trim() || !fpw.trim()) {
       setErr('Please enter both your email/ID and password.');
+      return;
+    }
+    if (!captchaToken) {
+      setErr('Please complete the CAPTCHA to prove you are not a bot.');
       return;
     }
     setBusy(true);
@@ -171,6 +177,20 @@ function SignIn({ state, setters, onLogin, onClose, go }) {
 
       {err && <Err m={err} />}
       {ok && <Ok m={ok} />}
+
+      <div className="pt-0.5">
+        <CaptchaCheckbox
+          onVerify={setCaptchaToken}
+          onExpire={() => setCaptchaToken(null)}
+          disabled={busy}
+          className="py-1"
+        />
+        {captchaToken && (
+          <p className="text-center text-[11px] text-emerald-600 font-semibold flex items-center justify-center gap-1 mt-1">
+            <CheckCircle2 className="w-3.5 h-3.5" /> Human verified ✓
+          </p>
+        )}
+      </div>
 
       <SubmitBtn busy={busy} loadingText="Signing in..."><LogIn className="w-4 h-4" /> Sign In to Campus Assistant</SubmitBtn>
 

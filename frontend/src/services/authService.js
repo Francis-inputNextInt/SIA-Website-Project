@@ -207,6 +207,14 @@ export async function registerUser({ name, email, role = 'Student', department =
     if (/already registered|already been registered/i.test(error.message)) {
       throw new Error('This email is already registered. Please sign in instead.');
     }
+    // Supabase free tier has a 2 emails/hour rate limit on the default SMTP.
+    // Provide a clear, actionable message instead of the raw Supabase error.
+    if (/error sending|email|smtp|rate.*limit|too many/i.test(error.message)) {
+      throw new Error(
+        "We couldn't send the verification email. This may be due to a temporary email service limit. " +
+        'Please try again in a few minutes, or contact the admin to configure a custom email provider.'
+      );
+    }
     throw new Error(error.message || 'Unable to create your account. Please try again.');
   }
 
@@ -221,6 +229,12 @@ export async function registerUser({ name, email, role = 'Student', department =
   }
 
   // Email confirmation disabled → user is signed in right away.
+  if (typeof window !== 'undefined') {
+    console.info(
+      '[authService] Sign-up returned an active session — "Confirm email" is OFF in Supabase. ' +
+      'Turn it ON in Supabase Dashboard → Authentication → Providers → Email to require a 6-digit code.'
+    );
+  }
   const profile = await fetchProfile(data.user.id);
   const newUser = buildUserFromAuth(data.user, profile);
   newUser.loginTimestamp = new Date().toISOString();
