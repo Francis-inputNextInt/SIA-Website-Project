@@ -52,7 +52,7 @@ export default function App() {
     setIsTyping(true);
 
     try {
-      // 2. Fetch mock assistant response with realistic simulation delay
+      // Fetch AI response from the backend response engine (POST /api/chat)
       const aiResponse = await sendChatMessage(trimmed);
       setMessages((prev) => [...prev, aiResponse]);
     } catch (err) {

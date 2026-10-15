@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Eye, EyeOff, LogIn, UserPlus, KeyRound, Mail, User, IdCard, ArrowRight, CheckCircle2, ShieldAlert, ShieldCheck, RefreshCw, Loader2, GraduationCap } from 'lucide-react';
-import { DEMO_ACCOUNTS, loginUser, registerUser, sendPasswordReset, verifySignupOtp } from '../../services/authService';
+import { Eye, EyeOff, LogIn, UserPlus, KeyRound, Mail, User, IdCard, ArrowRight, CheckCircle2, ShieldAlert, Loader2, GraduationCap } from 'lucide-react';
+import { DEMO_ACCOUNTS, loginUser, registerUser, sendPasswordReset } from '../../services/authService';
 import CaptchaCheckbox from '../CaptchaCheckbox';
 
 export const AUTH_INPUT = 'w-full bg-white text-slate-800 placeholder-slate-400 text-sm px-3.5 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all disabled:bg-slate-50 disabled:opacity-60';
@@ -115,7 +115,7 @@ export function SignInView({ state, setters, onLogin, onClose = () => {}, go }) 
 /* ===== Sign Up ===== */
 export function SignUpView({ state, setters, onLogin, onClose = () => {}, go }) {
   const { fn, fe, rol, dep, sup, cfp } = state;
-  const { setFn, setFe, setRol, setDep, setSup, setCfp, spw, setSpw, scp, setScp, busy, setBusy, err, ok, setErr, setOk, setVerifyEmail = () => {}, setRegSnapshot = () => {} } = setters;
+  const { setFn, setFe, setRol, setDep, setSup, setCfp, spw, setSpw, scp, setScp, busy, setBusy, err, ok, setErr, setOk } = setters;
 
   const submit = async (e) => {
     e.preventDefault();
@@ -128,11 +128,7 @@ export function SignUpView({ state, setters, onLogin, onClose = () => {}, go }) 
     try {
       const result = await registerUser({ name: fn, email: fe, role: rol, department: dep, password: sup });
       if (result.needsEmailVerification) {
-        // Supabase emailed a 6-digit code — show the in-app verification screen
-        // instead of sending the user to their inbox for a redirect.
-        setVerifyEmail(result.email);
-        setRegSnapshot({ name: fn, email: fe, role: rol, department: dep, password: sup });
-        setTimeout(() => go('verify'), 500);
+        setOk(result.message || `Account created! We've sent a confirmation link to ${fe}. Please check your inbox and click the link to activate your account.`);
       } else {
         onLogin(result);
         setOk(`Account created. Welcome, ${result.name.split(' ')[0]}!`);
@@ -221,85 +217,6 @@ export function ForgotView({ state, setters }) {
       {err && <AuthErr m={err} />}
       {ok && <AuthOk m={ok} />}
       <AuthSubmitBtn busy={busy} loadingText="Sending recovery email..."><Mail className="w-4 h-4" /> Send Recovery Instructions</AuthSubmitBtn>
-    </form>
-  );
-}
-
-/* ===== Email Verification (6-digit code) ===== */
-export function VerifyView({ state, setters, onLogin, onClose = () => {}, go }) {
-  const { verifyEmail, fcode, regSnapshot } = state;
-  const { setFcode, busy, setBusy, err, ok, setErr, setOk } = setters;
-
-  const submit = async (e) => {
-    e.preventDefault();
-    setErr(''); setOk('');
-    const code = String(fcode || '').replace(/\D/g, '');
-    if (code.length !== 6) {
-      setErr('Please enter the 6-digit code from your email.');
-      return;
-    }
-    setBusy(true);
-    try {
-      const user = await verifySignupOtp({ email: verifyEmail, token: code });
-      onLogin(user);
-      setOk(`Email confirmed! Welcome, ${user.name.split(' ')[0]}!`);
-      setTimeout(() => onClose(), 900);
-    } catch (err2) {
-      setErr(err2.message);
-    } finally {
-      setTimeout(() => setBusy(false), 900);
-    }
-  };
-
-  const resend = async () => {
-    if (!regSnapshot) { setErr('Registration details are missing. Please sign up again.'); return; }
-    setErr(''); setOk('');
-    setBusy(true);
-    try {
-      // Re-running signUp resends the email with a fresh 6-digit code.
-      await registerUser(regSnapshot);
-      setOk(`A new 6-digit code was sent to ${verifyEmail}. Check your inbox.`);
-    } catch (err2) {
-      setErr(err2.message);
-    } finally {
-      setTimeout(() => setBusy(false), 900);
-    }
-  };
-
-  return (
-    <form onSubmit={submit} className="space-y-4">
-      <div className="p-3.5 rounded-xl bg-blue-50/70 border border-blue-100 text-slate-600 text-xs sm:text-sm font-medium leading-relaxed">
-        Enter the <span className="font-bold text-blue-700">6-digit code</span> we sent to{' '}
-        <span className="font-semibold text-slate-800">{verifyEmail}</span> to prove that this email is really yours.
-      </div>
-      <div>
-        <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-600 mb-1.5">
-          <KeyRound className="w-3.5 h-3.5 text-blue-500" /> 6-Digit Verification Code
-        </label>
-        <input
-          type="text"
-          inputMode="numeric"
-          autoComplete="one-time-code"
-          maxLength={6}
-          value={fcode}
-          onChange={(e) => setFcode(e.target.value.replace(/\D/g, ''))}
-          placeholder="000000"
-          autoFocus
-          disabled={busy}
-          className={`${AUTH_INPUT} text-center text-lg font-bold tracking-[0.5em]`}
-        />
-      </div>
-      {err && <AuthErr m={err} />}
-      {ok && <AuthOk m={ok} />}
-      <AuthSubmitBtn busy={busy} loadingText="Verifying code..."><ShieldCheck className="w-4 h-4" /> Verify &amp; Complete Registration</AuthSubmitBtn>
-      <div className="pt-1 flex items-center justify-between text-xs font-medium text-slate-500">
-        <button type="button" onClick={resend} disabled={busy} className="inline-flex items-center gap-1 text-blue-600 hover:underline disabled:opacity-50 disabled:cursor-not-allowed">
-          <RefreshCw className="w-3.5 h-3.5" /> Resend code
-        </button>
-        <button type="button" onClick={() => go('signin')} disabled={busy} className="text-slate-500 hover:underline disabled:opacity-50 disabled:cursor-not-allowed">
-          Use a different email
-        </button>
-      </div>
     </form>
   );
 }

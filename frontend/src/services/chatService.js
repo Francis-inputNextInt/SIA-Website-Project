@@ -1,25 +1,31 @@
-import { getMockResponse } from '../data/mockResponses.js';
-
 /**
- * Service to handle chat message processing.
- * Currently uses the frontend mock response system with simulated typing delay.
- * In future phases, this can be swapped with OpenAI API backend calls.
+ * Chat API service — calls the backend POST /api/chat exclusively.
+ *
+ * All response-generation logic lives server-side (backend/src/data/responseEngine.js).
+ * There is deliberately NO local fallback here: message generation must not be
+ * duplicated in the browser. If the server is unreachable the error is surfaced
+ * so the UI can show a helpful message.
  */
-export async function sendChatMessage(userMessage) {
-  // Simulate network/AI generation delay (600ms - 850ms)
-  const delay = Math.floor(Math.random() * 250) + 600;
-  
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      const response = getMockResponse(userMessage);
-      resolve({
-        id: `ai-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
-        role: 'assistant',
-        content: response.content,
-        category: response.category,
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-      });
-    }, delay);
-  });
-}
+const env = (typeof import.meta !== 'undefined' && import.meta.env) || {};
+const API_BASE = env.VITE_API_BASE_URL || '/api';
 
+export async function sendChatMessage(userMessage) {
+  const response = await fetch(`${API_BASE}/chat`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ message: userMessage })
+  });
+
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}));
+    throw new Error(data.error || `Request failed with status ${response.status}.`);
+  }
+
+  const data = await response.json();
+
+  // Short cosmetic delay so the typing indicator keeps its original feel.
+  const delay = Math.floor(Math.random() * 250) + 300;
+  await new Promise((resolve) => setTimeout(resolve, delay));
+
+  return data;
+}

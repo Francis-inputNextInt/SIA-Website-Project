@@ -1,14 +1,37 @@
 # AI Campus Assistant
 
-Full-stack campus assistant web app: a Vite + React frontend with **Supabase** as the real backend for authentication and user profiles.
+Full-stack campus assistant web app: a **Vite + React** frontend with an **Express** backend API and **Supabase** for authentication and user profiles.
 
 ## Stack
 
 | Layer      | Tech                                              |
 | ---------- | ------------------------------------------------- |
 | Frontend   | React 18, Vite 6, Tailwind CSS, lucide-react      |
-| Auth & DB  | Supabase (Auth + Postgres + Row Level Security)   |
-| Backend    | `backend/` folder reserved for future API server  |
+| Backend    | Node.js, Express 4, dotenv, cors                   |
+| Auth & DB  | Supabase (Auth + Postgres + Row Level Security)    |
+
+---
+
+## Project Structure
+
+```
+project-root/
+├── frontend/           # Vite + React SPA
+│   ├── src/            # Components, pages, services, data
+│   ├── public/         # Static assets (images)
+│   ├── package.json
+│   ├── vite.config.js  # Dev proxy: /api → localhost:5000
+│   └── .env.local      # Supabase anon key + reCAPTCHA key (git-ignored)
+│
+├── backend/            # Express API server
+│   ├── src/            # Server routes, response engine, Supabase admin client
+│   ├── package.json
+│   ├── .env            # Supabase service_role key + PORT (git-ignored)
+│   └── test/           # Backend tests
+│
+├── .gitignore
+└── README.md
+```
 
 ---
 
@@ -77,28 +100,13 @@ create trigger on_auth_user_created
 ```
 
 > **Tip for local testing:** For frictionless registration during development you can turn off
-> **Authentication → Sign In / Up → Email provider → "Confirm email"**. The app handles
-> both modes: when "Confirm email" is ON, the user enters a 6-digit verification code right in the website (no email-link redirect needed).
+> **Authentication → Sign In / Up → Email provider → "Confirm email"**. When "Confirm email" is ON, the app prompts the user to check their inbox and click the confirmation link sent by Supabase.
 >
-> **⚠️ IMPORTANT — No 6-digit code screen?** If users get logged in immediately after signing up
-> (no "Enter the 6-digit code" screen appears), that means **"Confirm email" is OFF** in the Supabase
-> dashboard. You can verify this in the browser console — `authService` logs a clear info message
-> when this happens. To require email verification:
+> To require email verification via confirmation link:
 > 1. **Supabase Dashboard → Project Settings → Authentication → SMTP Settings** → enable a custom SMTP
->    (e.g. Gmail SMTP) so emails are reliably delivered (free tier is limited to 2 emails/hour).
+>    (e.g. Gmail SMTP) so emails are reliably delivered.
 > 2. **Supabase Dashboard → Authentication → Providers → Email** → turn **"Confirm email"** ON.
-> 3. Sign up again — the 6-digit verification screen will now appear.
-
-> **Supabase email template note:** Go to **Authentication → Email Templates → "Confirm signup"**
-> and make sure the email body includes `{{ .Token }}` so that the 6-digit code is shown to the user.
-> Example body:
-> ```
-> Hi {{ .Email }},
->
-> Your verification code is: {{ .Token }}
->
-> Enter this code on the website to confirm your account.
-> ```
+> 3. **Supabase Dashboard → Authentication → URL Configuration** → set **Site URL** to `http://localhost:5173` (or your frontend URL).
 
 ### 2. Frontend credentials (`frontend/.env.local`)
 
@@ -115,26 +123,16 @@ This file is git-ignored — never commit it.
 ```
 SUPABASE_URL=https://YOUR-PROJECT-REF.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=YOUR_SERVICE_ROLE_KEY
+PORT=5000
 ```
 
 The `service_role` key is **secret and server-only** — it must never go in the frontend.
 
 ---
 
-## How auth works now
+## Running the App
 
-- `frontend/src/services/supabase.js` — single shared Supabase client.
-- `frontend/src/services/authService.js`:
-  - `registerUser` → `supabase.auth.signUp` → the `handle_new_user` trigger creates a `profiles` row.
-  - `verifySignupOtp` → `supabase.auth.verifyOtp({ type: 'signup' })` — confirms the account using the 6-digit email code, creates a session, and logs the user in immediately.
-  - `loginUser` → `supabase.auth.signInWithPassword` → merges the user with their `profiles` row.
-  - `updateUserProfile` → upserts changes into the `profiles` table.
-  - `sendPasswordReset` → `supabase.auth.resetPasswordForEmail`.
-  - `clearUserSession` → `supabase.auth.signOut`.
-- Registration/login returns the same user shape the UI already expects
-  (`id, name, email, studentId, role, department, yearLevel, avatarColor, initials, enrolled`).
-
-## Running the app
+### Frontend (Vite dev server, port 3000)
 
 ```bash
 cd frontend
@@ -142,11 +140,55 @@ npm install
 npm run dev
 ```
 
+### Backend (Express API server, port 5000)
+
+```bash
+cd backend
+npm install
+npm run dev
+```
+
+The frontend Vite dev server automatically proxies `/api` requests to the backend on port 5000, so no CORS issues arise during development.
+
+---
+
+## How Auth Works
+
+All auth logic, database access, and business rules live on the **backend**
+(service-role key). The frontend is a thin API client.
+
+- **Backend** — `backend/src/services/authService.js` + `backend/src/controllers/authController.js`:
+  - `POST /api/auth/register` → `supabase.auth.signUp` with `emailRedirectTo` → the `handle_new_user` trigger creates a `profiles` row (`needsEmailVerification` returned when emails are on).
+  - `POST /api/auth/login` → `supabase.auth.signInWithPassword` (email **or** student/faculty ID) → merges the user with their `profiles` row.
+  - `POST /api/auth/forgot-password` → `supabase.auth.resetPasswordForEmail`.
+  - `GET /api/auth/me`, `PATCH /api/profile` → token-verified session & profile ownership.
+  - Enrollment gate and role rules (personal email → Applicant) are enforced server-side.
+- **Frontend** (`frontend/src/services/authService.js`) — thin API client that calls the endpoints above, persists the user object for instant session restore, and hands backend-issued tokens to the anon-key client (`frontend/src/services/supabase.js`) for session persistence + auto-refresh only.
+- Registration/login returns the same user shape the UI already expects
+  (`id, name, email, studentId, role, department, yearLevel, avatarColor, initials, enrolled`).
+
+## How Chat Works
+
+- **Backend** (`backend/src/data/responseEngine.js`) — the server-side AI response engine (keyword matching, campus knowledge base), served by `POST /api/chat`.
+- **Frontend** (`frontend/src/services/chatService.js`) — sends user messages to `POST /api/chat`. There is no local fallback; the UI surfaces a clear error if the backend is unreachable.
+
+---
+
 ## Tests
+
+### Frontend tests
 
 ```bash
 cd frontend
 node test/auth.test.js
+node test/assistant.test.js
+```
+
+### Backend tests
+
+```bash
+cd backend
+npm test
 ```
 
 Unit tests cover the pure logic + validation paths. Live flows (signup/login/profile)

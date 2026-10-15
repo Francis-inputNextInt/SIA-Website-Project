@@ -1,6 +1,15 @@
 /**
- * Supabase Client
- * Single shared client for the entire frontend.
+ * Supabase Client — SESSION PERSISTENCE ONLY
+ *
+ * This anon-key client exists in the browser for exactly one documented
+ * purpose: persisting the auth session and auto-refreshing the access token
+ * (see Supabase docs). It performs NO auth logic and NO database writes.
+ *
+ *   - Auth logic & business rules run on the backend with the service-role key
+ *     (backend/src/config/supabase.js).
+ *   - The frontend hands backend-issued tokens to this client via
+ *     `supabase.auth.setSession(...)` and reads a fresh access token via
+ *     `supabase.auth.getSession()` for authenticated API calls.
  *
  * Reads credentials from frontend/.env.local:
  *   VITE_SUPABASE_URL      – project API URL

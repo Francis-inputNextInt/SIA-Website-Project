@@ -6,7 +6,6 @@ import {
   loginUser,
   registerUser,
   sendPasswordReset,
-  verifySignupOtp,
   getCurrentUser,
   saveUserSession,
   clearUserSession,
@@ -113,27 +112,6 @@ try {
   assert.ok(err.message.includes('No active session'));
 }
 assert.strictEqual(threwNoSession, true);
-
-// 10. Verification-code validation happens before any Supabase call
-console.log('✓ Test: verifySignupOtp with a bad email throws');
-let threwVerifyEmail = false;
-try {
-  await verifySignupOtp({ email: 'not-an-email', token: '123456' });
-} catch (err) {
-  threwVerifyEmail = true;
-  assert.ok(err.message.length > 0);
-}
-assert.strictEqual(threwVerifyEmail, true);
-
-console.log('✓ Test: verifySignupOtp with a short code throws');
-let threwVerifyCode = false;
-try {
-  await verifySignupOtp({ email: 'test@campus.edu', token: '123' });
-} catch (err) {
-  threwVerifyCode = true;
-  assert.ok(err.message.length > 0);
-}
-assert.strictEqual(threwVerifyCode, true);
 
 // 11. Session round-trip (in-memory when no browser storage is available)
 console.log('✓ Test: saveUserSession / getCurrentUser / clearUserSession');
