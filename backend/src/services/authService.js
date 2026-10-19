@@ -181,8 +181,8 @@ export async function loginUser({ identifier, password }) {
 }
 
 /**
- * Create a new account. The `handle_new_user` trigger automatically inserts a
- * matching row into the `profiles` table.
+ * Create a new account. Uses the admin API to create the user directly,
+ * bypassing email confirmation. Then signs in immediately to get a session.
  */
 export async function registerUser({ name, email, role = 'Student', department = '', studentId = '', password }) {
   if (!name || name.trim().length < 2) {
@@ -206,50 +206,43 @@ export async function registerUser({ name, email, role = 'Student', department =
   const avatarColor = effectiveRole === 'Faculty' ? 'bg-indigo-600'
     : isPersonalDomain ? 'bg-amber-500' : 'bg-blue-600';
 
-  const { data, error } = await supabase.auth.signUp({
+  // Use admin.createUser so email confirmation is skipped entirely.
+  const { data: createData, error: createError } = await supabase.auth.admin.createUser({
     email: normEmail,
     password,
-    options: {
-      data: {
-        full_name: trimmedName,
-        student_id: studentId || '',
-        role: effectiveRole,
-        department: department.trim() || '',
-        avatar_color: avatarColor,
-        initials
-      },
-      emailRedirectTo: process.env.EMAIL_REDIRECT_URL || 'http://localhost:5173'
+    email_confirm: true,
+    user_metadata: {
+      full_name: trimmedName,
+      student_id: studentId || '',
+      role: effectiveRole,
+      department: department.trim() || '',
+      avatar_color: avatarColor,
+      initials
     }
   });
 
-  if (error) {
-    if (/already registered|already been registered/i.test(error.message)) {
+  if (createError) {
+    if (/already registered|already been registered|already exists/i.test(createError.message)) {
       throw new AppError(409, 'This email is already registered. Please sign in instead.');
     }
-    if (/error sending|email|smtp|rate.*limit|too many/i.test(error.message)) {
-      throw new AppError(
-        429,
-        "We couldn't send the verification email. This may be due to a temporary email service limit. " +
-        'Please try again in a few minutes, or contact the admin to configure a custom email provider.'
-      );
-    }
-    throw new AppError(400, error.message || 'Unable to create your account. Please try again.');
+    throw new AppError(400, createError.message || 'Unable to create your account. Please try again.');
   }
 
-  // When confirmation emails are enabled, data.session is null here.
-  if (!data.session) {
-    return {
-      needsEmailVerification: true,
-      email: normEmail,
-      message: `Account created! A confirmation link was sent to ${normEmail}. Please check your inbox and click the link to activate your account.`
-    };
+  // Sign in immediately to get a valid session for the new user.
+  const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+    email: normEmail,
+    password
+  });
+
+  if (signInError) {
+    throw new AppError(400, signInError.message || 'Account created but could not sign in automatically. Please sign in manually.');
   }
 
-  const profile = await fetchProfile(data.user.id);
-  const newUser = buildUserFromAuth(data.user, profile);
+  const profile = await fetchProfile(signInData.user.id);
+  const newUser = buildUserFromAuth(signInData.user, profile);
   newUser.loginTimestamp = new Date().toISOString();
 
-  return { user: newUser, session: sessionToClient(data.session) };
+  return { user: newUser, session: sessionToClient(signInData.session) };
 }
 
 /**

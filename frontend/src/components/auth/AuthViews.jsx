@@ -127,13 +127,9 @@ export function SignUpView({ state, setters, onLogin, onClose = () => {}, go }) 
     setBusy(true);
     try {
       const result = await registerUser({ name: fn, email: fe, role: rol, department: dep, password: sup });
-      if (result.needsEmailVerification) {
-        setOk(result.message || `Account created! We've sent a confirmation link to ${fe}. Please check your inbox and click the link to activate your account.`);
-      } else {
-        onLogin(result);
-        setOk(`Account created. Welcome, ${result.name.split(' ')[0]}!`);
-        setTimeout(() => onClose(), 900);
-      }
+      onLogin(result);
+      setOk(`Account created. Welcome, ${result.name.split(' ')[0]}!`);
+      setTimeout(() => onClose(), 900);
     } catch (err2) { setErr(err2.message); }
     finally { setTimeout(() => setBusy(false), 900); }
   };

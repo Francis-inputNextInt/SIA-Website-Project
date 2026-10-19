@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { RotateCcw, GraduationCap, LogIn, LogOut, ChevronDown, UserRound, Home, MessageSquare, Menu } from 'lucide-react';
+import { RotateCcw, GraduationCap, LogIn, LogOut, ChevronDown, UserRound, Home, MessageSquare, Building2, Menu } from 'lucide-react';
 
-export default function Header({ view, onGoToDashboard, onGoToChat, onNewConversation, isResetting, user, onOpenLogin, onLogout, onOpenProfile, onToggleSidebar }) {
+export default function Header({ view, onGoToDashboard, onGoToChat, onGoToServices, onNewConversation, isResetting, user, onOpenLogin, onLogout, onOpenProfile, onToggleSidebar }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef(null);
 
@@ -98,6 +98,11 @@ export default function Header({ view, onGoToDashboard, onGoToChat, onNewConvers
                     className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium text-slate-700 hover:bg-blue-50 active:bg-blue-100 transition-colors">
                     <Home className="w-4 h-4 text-blue-600" />
                     Dashboard
+                  </button>
+                  <button type="button" onClick={() => { setMenuOpen(false); onGoToServices(); }}
+                    className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium text-slate-700 hover:bg-blue-50 active:bg-blue-100 transition-colors">
+                    <Building2 className="w-4 h-4 text-blue-600" />
+                    Student Services
                   </button>
                   <button type="button" onClick={() => { setMenuOpen(false); onOpenProfile(); }}
                     className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium text-slate-700 hover:bg-blue-50 active:bg-blue-100 transition-colors">

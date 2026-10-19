@@ -9,6 +9,7 @@ import AccessDenied from './components/AccessDenied';
 import LoginPage from './components/LoginPage';
 import ProfilePage from './components/ProfilePage';
 import DashboardPage from './components/DashboardPage';
+import StudentServicesPage from './components/StudentServicesPage';
 import Toast from './components/Toast';
 import { INITIAL_ASSISTANT_MESSAGE } from './data/mockResponses';
 import { sendChatMessage } from './services/chatService';
@@ -139,6 +140,9 @@ export default function App() {
   // Navigate to chat (AI Assistant)
   const handleGoToChat = useCallback(() => setView('chat'), []);
 
+  // Navigate to Student Services
+  const handleGoToServices = useCallback(() => setView('services'), []);
+
   // Toggle sidebar
   const handleToggleSidebar = useCallback(() => setSidebarOpen((prev) => !prev), []);
   const handleCloseSidebar = useCallback(() => setSidebarOpen(false), []);
@@ -155,6 +159,7 @@ export default function App() {
         view={view}
         onGoToDashboard={handleGoToDashboard}
         onGoToChat={handleGoToChat}
+        onGoToServices={handleGoToServices}
         onNewConversation={handleNewConversation}
         isResetting={isResetting}
         user={currentUser}
@@ -171,6 +176,7 @@ export default function App() {
         view={view}
         onGoToDashboard={handleGoToDashboard}
         onGoToChat={handleGoToChat}
+        onGoToServices={handleGoToServices}
         user={currentUser}
       />
 
@@ -182,6 +188,12 @@ export default function App() {
           user={currentUser}
           onGoToChat={handleGoToChat}
           onGoToProfile={handleOpenProfile}
+          onGoToServices={handleGoToServices}
+        />
+      ) : view === 'services' ? (
+        <StudentServicesPage
+          user={currentUser}
+          showToast={showToast}
         />
       ) : view === 'profile' ? (
         <ProfilePage

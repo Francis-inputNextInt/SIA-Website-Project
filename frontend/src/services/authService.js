@@ -247,9 +247,7 @@ export async function registerUser({ name, email, role = 'Student', department =
     })
   });
 
-  // Email confirmation is on
-  if (data.needsEmailVerification) return data;
-
+  // Email confirmation is disabled — always proceed directly to session persistence
   await persistSupabaseSession(data.session);
   saveUserSession(data.user, rememberMe);
   return data.user;

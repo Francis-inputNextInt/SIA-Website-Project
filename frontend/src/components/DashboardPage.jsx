@@ -241,14 +241,14 @@ function AnnouncementsSection() {
 
 /* ── Section: Quick Actions ───────────────────────────────── */
 
-function QuickActionsSection({ onGoToChat, onGoToProfile }) {
+function QuickActionsSection({ onGoToChat, onGoToProfile, onGoToServices }) {
   const [expandedId, setExpandedId] = useState(null);
 
   const actions = [
     { ...QUICK_ACTIONS[0], onClick: onGoToChat },
     { ...QUICK_ACTIONS[1], onClick: () => {} },
     { ...QUICK_ACTIONS[2], onClick: onGoToProfile },
-    { ...QUICK_ACTIONS[3], onClick: () => {} },
+    { ...QUICK_ACTIONS[3], onClick: onGoToServices },
   ];
 
   return (
@@ -302,7 +302,7 @@ function QuickActionsSection({ onGoToChat, onGoToProfile }) {
 
 /* ── Main Dashboard ───────────────────────────────────────── */
 
-export default function DashboardPage({ user, onGoToChat, onGoToProfile }) {
+export default function DashboardPage({ user, onGoToChat, onGoToProfile, onGoToServices }) {
   return (
     <main className="flex-1 overflow-y-auto bg-slate-50/50">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6">
@@ -312,7 +312,7 @@ export default function DashboardPage({ user, onGoToChat, onGoToProfile }) {
 
         {/* Quick Actions — inilipat sa itaas para agad makita at ma-access */}
         <div className="bg-white rounded-2xl border border-slate-200/80 p-4 sm:p-5 shadow-sm">
-          <QuickActionsSection onGoToChat={onGoToChat} onGoToProfile={onGoToProfile} />
+          <QuickActionsSection onGoToChat={onGoToChat} onGoToProfile={onGoToProfile} onGoToServices={onGoToServices} />
         </div>
 
         {/* Row 1: Schedule + Deadlines */}

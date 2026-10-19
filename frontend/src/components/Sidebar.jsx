@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react';
-import { Home, MessageSquare, X, GraduationCap } from 'lucide-react';
+import { Home, MessageSquare, Building2, X, GraduationCap } from 'lucide-react';
 
-export default function Sidebar({ isOpen, onClose, view, onGoToDashboard, onGoToChat, user }) {
+export default function Sidebar({ isOpen, onClose, view, onGoToDashboard, onGoToChat, onGoToServices, user }) {
   const sidebarRef = useRef(null);
 
   // Close when clicking outside on mobile
@@ -95,6 +95,18 @@ export default function Sidebar({ isOpen, onClose, view, onGoToDashboard, onGoTo
           >
             <MessageSquare className="w-4.5 h-4.5" />
             AI Assistant
+          </button>
+          <button
+            type="button"
+            onClick={() => { onGoToServices(); onClose(); }}
+            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all duration-150 ${
+              view === 'services'
+                ? 'bg-blue-50 text-blue-700 border border-blue-200/60 shadow-sm'
+                : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900 border border-transparent'
+            }`}
+          >
+            <Building2 className="w-4.5 h-4.5" />
+            Student Services
           </button>
         </nav>
 
