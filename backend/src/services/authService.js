@@ -15,8 +15,9 @@ import { getAdminClient } from '../config/supabase.js';
 
 // ── Shared business rules ────────────────────────────────────
 
-export const ALLOWED_ROLES = ['Student', 'Faculty', 'Staff'];
-
+export const ALLOWED_ROLES = ['Student', 'Faculty', 'Staff', 'Admin'];
+export const ADMIN_ROLES = ['Admin'];
+export const STAFF_ROLES = ['Staff', 'Admin'];
 const PERSONAL_EMAIL_DOMAINS = [
   'gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com',
   'icloud.com', 'aol.com', 'protonmail.com', 'mail.com', 'live.com'

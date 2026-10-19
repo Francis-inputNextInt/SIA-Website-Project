@@ -38,6 +38,28 @@ export const DEMO_ACCOUNTS = [
     initials: 'EV'
   },
   {
+    id: 'usr_staff_01',
+    name: 'Marcus Thorne',
+    email: 'staff@campus.edu',
+    studentId: 'STF-2021-104',
+    role: 'Staff',
+    department: 'Student Affairs & Admissions',
+    yearLevel: 'Senior Coordinator',
+    avatarColor: 'bg-emerald-600',
+    initials: 'MT'
+  },
+  {
+    id: 'usr_admin_01',
+    name: 'Dean Victoria Sterling',
+    email: 'admin@campus.edu',
+    studentId: 'ADM-2018-001',
+    role: 'Admin',
+    department: 'Office of the University President',
+    yearLevel: 'System Administrator',
+    avatarColor: 'bg-rose-600',
+    initials: 'VS'
+  },
+  {
     id: 'usr_applicant_01',
     name: 'Jordan Smith',
     email: 'applicant@gmail.com',
@@ -56,8 +78,9 @@ const REMEMBER_KEY = 'campus_ai_auth_remember';
 
 // Roles allowed to use the AI Campus Assistant.
 // Mirror of the backend gate — the backend is authoritative.
-export const ALLOWED_ROLES = ['Student', 'Faculty', 'Staff'];
-
+export const ALLOWED_ROLES = ['Student', 'Faculty', 'Staff', 'Admin'];
+export const ADMIN_ROLES = ['Admin'];
+export const STAFF_ROLES = ['Staff', 'Admin'];
 // Common personal / non-university email domains -> treated as NOT enrolled.
 // NOTE: role/enrollment enforcement happens server-side; this list is only
 // used by the informational helpers below.

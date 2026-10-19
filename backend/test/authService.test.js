@@ -38,7 +38,7 @@ assert.strictEqual(isPersonalEmail('user@campus.edu'), false);
 
 // 4. Enrolled gate
 console.log('✓ Checking isEnrolledUser / ALLOWED_ROLES...');
-assert.deepStrictEqual(ALLOWED_ROLES, ['Student', 'Faculty', 'Staff']);
+assert.deepStrictEqual(ALLOWED_ROLES, ['Student', 'Faculty', 'Staff', 'Admin']);
 assert.strictEqual(isEnrolledUser({ role: 'Student' }), true);
 assert.strictEqual(isEnrolledUser({ role: 'Faculty' }), true);
 assert.strictEqual(isEnrolledUser({ role: 'Applicant' }), false);

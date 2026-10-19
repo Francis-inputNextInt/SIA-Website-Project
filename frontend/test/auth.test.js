@@ -19,7 +19,7 @@ console.log('--- RUNNING AUTH SERVICE TEST SUITE (Supabase build) ---');
 
 // 1. Demo accounts structure (kept as documentation / quick-preview references)
 console.log('✓ Checking Demo Accounts...');
-assert.ok(Array.isArray(DEMO_ACCOUNTS) && DEMO_ACCOUNTS.length === 3);
+assert.ok(Array.isArray(DEMO_ACCOUNTS) && DEMO_ACCOUNTS.length === 5);
 DEMO_ACCOUNTS.forEach((acc) => {
   assert.ok(acc.name && acc.email && acc.studentId && acc.role && acc.initials);
 });
@@ -46,10 +46,12 @@ assert.strictEqual(isPersonalEmail('user@campus.edu'), false);
 
 // 5. Enrolled gate
 console.log('✓ Checking isEnrolledUser / ALLOWED_ROLES...');
-assert.deepStrictEqual(ALLOWED_ROLES, ['Student', 'Faculty', 'Staff']);
+assert.deepStrictEqual(ALLOWED_ROLES, ['Student', 'Faculty', 'Staff', 'Admin']);
 assert.strictEqual(isEnrolledUser(DEMO_ACCOUNTS[0]), true);   // Student
 assert.strictEqual(isEnrolledUser(DEMO_ACCOUNTS[1]), true);   // Faculty
-assert.strictEqual(isEnrolledUser(DEMO_ACCOUNTS[2]), false);  // Applicant
+assert.strictEqual(isEnrolledUser(DEMO_ACCOUNTS[2]), true);   // Staff
+assert.strictEqual(isEnrolledUser(DEMO_ACCOUNTS[3]), true);   // Admin
+assert.strictEqual(isEnrolledUser(DEMO_ACCOUNTS[4]), false);  // Applicant
 
 // 6. Login validation happens before any Supabase call
 console.log('✓ Test: Missing login credentials throws');
