@@ -1,47 +1,42 @@
 -- ============================================================
--- AI CAMPUS ASSISTANT — ADDITIONAL TABLES SQL SCHEMA
--- Run this in your Supabase SQL Editor to support service requests,
--- staff queue processing, announcements, and system audit logs.
+-- AI CAMPUS ASSISTANT — IDEMPOTENT SUPABASE SQL SCHEMA
+-- Run this in your Supabase SQL Editor.
 -- ============================================================
 
--- 1. SERVICE REQUESTS TABLE (Student Submissions & Staff/Faculty Processing)
-create table if not exists public.service_requests (
-  id uuid default gen_random_uuid() primary key,
-  user_id uuid references auth.users(id) on delete cascade not null,
-  student_name text not null default '',
-  student_email text not null default '',
-  student_id text default '',
-  service_type text not null default 'general',
-  title text not null default '',
-  details text default '',
-  status text not null default 'Pending', -- Pending, Processing, In Review, Approved, Rejected, Completed
-  staff_notes text default '',
-  handled_by text default '',
-  handled_by_email text default '',
-  metadata jsonb default '{}'::jsonb,
-  created_at timestamptz default now(),
-  updated_at timestamptz default now()
+-- 1. PROFILES TABLE (Linked to auth.users)
+create table if not exists public.profiles (
+  id uuid references auth.users (id) on delete cascade primary key,
+  full_name text not null default '',
+  email text not null default '',
+  role text not null default 'Student', -- Student, Faculty, Staff, Admin, Applicant
+  department text not null default '',
+  student_id text not null default '',
+  year_level text not null default '',
+  avatar_color text not null default 'bg-blue-600',
+  initials text not null default '',
+  enrolled boolean not null default true,
+  created_at timestamptz default now()
 );
 
--- Enable RLS for service_requests
-alter table public.service_requests enable row level security;
+alter table public.profiles enable row level security;
 
--- Policies
-create policy "Users can view their own service requests or staff can view all"
-  on public.service_requests for select
-  using (auth.uid() = user_id or exists (
-    select 1 from public.profiles where id = auth.uid() and role in ('Staff', 'Faculty', 'Admin')
+drop policy if exists "Users can view own profile" on public.profiles;
+create policy "Users can view own profile"
+  on public.profiles for select
+  using (auth.uid() = id or exists (
+    select 1 from public.profiles where id = auth.uid() and role in ('Admin', 'Staff')
   ));
 
-create policy "Students can insert their own requests"
-  on public.service_requests for insert
-  with check (auth.uid() = user_id);
+drop policy if exists "Users can update own profile" on public.profiles;
+create policy "Users can update own profile"
+  on public.profiles for update
+  using (auth.uid() = id);
 
-create policy "Staff, Faculty, and Admin can update requests"
-  on public.service_requests for update
-  using (exists (
-    select 1 from public.profiles where id = auth.uid() and role in ('Staff', 'Faculty', 'Admin')
-  ));
+drop policy if exists "Service role can insert profiles" on public.profiles;
+create policy "Service role can insert profiles"
+  on public.profiles for insert
+  with check (true);
+
 
 
 -- 2. ANNOUNCEMENTS TABLE
