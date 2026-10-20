@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
-  FACULTY_CLASSES,
-  FACULTY_ANNOUNCEMENTS
+  FACULTY_CLASSES
 } from '../../data/dashboardData';
 import {
   getAllServiceRequests,
@@ -9,6 +8,7 @@ import {
   createAnnouncement,
   getAnnouncements
 } from '../../services/serviceRequestService';
+import { supabase } from '../../services/supabase';
 import {
   BookOpen, Users, Megaphone, MessageSquare, Building2, Clock, RefreshCw,
   CheckCircle2, AlertCircle, X, Send, ChevronRight, FileText, Check, ShieldCheck
@@ -237,61 +237,77 @@ export default function FacultyDashboard({ user, onGoToChat, onGoToProfile, onGo
         getAllServiceRequests().catch(() => []),
         getAnnouncements().catch(() => [])
       ]);
-      if (reqs && reqs.length > 0) {
-        setInquiries(reqs.map(r => ({
-          id: r.id,
-          student: r.student_name || 'Student',
-          studentId: r.student_id || 'S-2024-001',
-          subject: r.title || r.service_type,
-          date: new Date(r.created_at).toLocaleDateString(),
-          status: r.status,
-          details: r.details,
-          remarks: r.remarks || r.response_notes
-        })));
-      } else {
-        setInquiries([
-          { id: '1', student: 'Alex Johnson', studentId: 'S-2024-001', subject: 'Consultation: CS101 Midterm Grade Review', date: 'Oct 20, 2026', status: 'Pending', details: 'Requesting clarification on algorithm efficiency question #4.' },
-          { id: '2', student: 'Maria Santos', studentId: 'S-2024-014', subject: 'Advising: Prerequisite Waiver Request', date: 'Oct 19, 2026', status: 'In Review', details: 'Asking approval for advanced database systems prerequisite override.' },
-          { id: '3', student: 'Liam Chen', studentId: 'S-2024-022', subject: 'Thesis Consultation: AI Model Evaluation', date: 'Oct 18, 2026', status: 'Approved', details: 'Checking research dataset metrics and evaluation benchmarks.' }
-        ]);
-      }
-      if (anns && anns.length > 0) setAnnouncements(anns);
-      else setAnnouncements(FACULTY_ANNOUNCEMENTS);
-    } catch {
-      setInquiries([
-        { id: '1', student: 'Alex Johnson', studentId: 'S-2024-001', subject: 'Consultation: CS101 Midterm Grade Review', date: 'Oct 20, 2026', status: 'Pending', details: 'Requesting clarification on algorithm efficiency question #4.' },
-        { id: '2', student: 'Maria Santos', studentId: 'S-2024-014', subject: 'Advising: Prerequisite Waiver Request', date: 'Oct 19, 2026', status: 'In Review', details: 'Asking approval for advanced database systems prerequisite override.' },
-        { id: '3', student: 'Liam Chen', studentId: 'S-2024-022', subject: 'Thesis Consultation: AI Model Evaluation', date: 'Oct 18, 2026', status: 'Approved', details: 'Checking research dataset metrics and evaluation benchmarks.' }
-      ]);
-      setAnnouncements(FACULTY_ANNOUNCEMENTS);
+      setInquiries((reqs || []).map(r => ({
+        id: r.id,
+        student: r.student_name || 'Student',
+        studentId: r.student_id || 'S-2024-001',
+        subject: r.title || r.service_type,
+        date: r.created_at ? new Date(r.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Recent',
+        status: r.status,
+        details: r.details,
+        remarks: r.remarks || r.staff_notes || r.response_notes
+      })));
+      setAnnouncements(anns || []);
+    } catch (err) {
+      console.error('Failed to load faculty dashboard data:', err);
+      setInquiries([]);
+      setAnnouncements([]);
     } finally {
       setRefreshing(false);
     }
   };
 
-  useEffect(() => { loadData(); }, []);
+  useEffect(() => {
+    loadData();
+
+    let subscription = null;
+    if (supabase) {
+      subscription = supabase
+        .channel('faculty-dashboard-db-changes')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'announcements' }, () => {
+          loadData();
+        })
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'service_requests' }, () => {
+          loadData();
+        })
+        .subscribe();
+    }
+
+    return () => {
+      if (subscription && supabase) {
+        supabase.removeChannel(subscription);
+      }
+    };
+  }, []);
 
   const handleUpdateStatus = async (id, newStatus, remarksText = '') => {
     try {
       await updateServiceRequestStatus(id, newStatus, remarksText);
+      await loadData();
     } catch (e) {
-      console.warn('Backend update failed, updating local state:', e);
+      alert(e.message || 'Failed to update request status in database.');
+      throw e;
     }
-    setInquiries(prev => prev.map(i => i.id === id ? { ...i, status: newStatus, remarks: remarksText } : i));
   };
 
   const handlePostAnnouncement = async (e) => {
     e.preventDefault();
     if (!newTitle.trim() || !newBody.trim()) return;
     try {
-      const ann = await createAnnouncement({ title: newTitle.trim(), body: newBody.trim(), category: 'Faculty Notice' });
-      setAnnouncements(prev => [ann, ...prev]);
+      await createAnnouncement({
+        title: newTitle.trim(),
+        body: newBody.trim(),
+        category: 'Faculty Notice',
+        priority: 'medium',
+        target_roles: ['Student', 'Faculty', 'Staff', 'Admin']
+      });
+      await loadData();
+      setNewTitle('');
+      setNewBody('');
+      setShowAnnModal(false);
     } catch (err) {
-      setAnnouncements(prev => [{ title: newTitle.trim(), body: newBody.trim(), category: 'Faculty Notice', date: 'Today' }, ...prev]);
+      alert(err.message || 'Failed to post announcement to database.');
     }
-    setNewTitle('');
-    setNewBody('');
-    setShowAnnModal(false);
   };
 
   const filteredInquiries = filter === 'All' ? inquiries : inquiries.filter(i => i.status === filter);

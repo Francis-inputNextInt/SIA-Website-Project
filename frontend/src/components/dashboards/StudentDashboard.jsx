@@ -16,10 +16,10 @@ import {
 import {
   SCHEDULE,
   DEADLINES,
-  ANNOUNCEMENTS,
   QUICK_ACTIONS,
 } from '../../data/dashboardData';
 import { getAnnouncements } from '../../services/serviceRequestService';
+import { supabase } from '../../services/supabase';
 
 /* ── Helpers ──────────────────────────────────────────────── */
 
@@ -207,7 +207,7 @@ function DeadlinesSection() {
 
 /* ── Section: Announcements ───────────────────────────────── */
 
-function AnnouncementsSection({ announcements = ANNOUNCEMENTS }) {
+function AnnouncementsSection({ announcements = [], loading = false, error = null, onRefresh }) {
   return (
     <section>
       <div className="flex items-center justify-between mb-4">
@@ -217,35 +217,78 @@ function AnnouncementsSection({ announcements = ANNOUNCEMENTS }) {
           </div>
           <h2 className="text-sm sm:text-base font-bold text-slate-900 tracking-tight">Announcements</h2>
         </div>
-        <span className="text-xs font-medium text-slate-500">{announcements.length} new</span>
-      </div>
-      <div className="space-y-2.5">
-        {announcements.map((ann) => {
-          const dateStr = ann.date || (ann.created_at ? new Date(ann.created_at).toLocaleDateString() : 'Recent');
-          const priorityVal = ann.priority || 'medium';
-          const categoryVal = ann.category || 'General';
-          return (
-            <div
-              key={ann.id}
-              className="p-3.5 bg-slate-50/80 rounded-xl border border-slate-200/80 hover:border-blue-300 hover:bg-blue-50/30 hover:shadow-sm transition-all duration-150"
+        <div className="flex items-center gap-2">
+          {onRefresh && (
+            <button
+              onClick={onRefresh}
+              className="text-xs text-indigo-600 hover:text-indigo-800 font-semibold transition-colors"
             >
-              <div className="flex items-start justify-between gap-2">
-                <h3 className="text-sm font-bold text-slate-900 leading-snug">{ann.title}</h3>
-                <span className={`shrink-0 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold ${PRIORITY_STYLES[priorityVal] || PRIORITY_STYLES.low}`}>
-                  {priorityVal}
-                </span>
-              </div>
-              <p className="text-xs text-slate-600 leading-relaxed mt-1.5">{ann.body}</p>
-              <div className="flex items-center gap-2 mt-2.5">
-                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-white text-slate-600 border border-slate-200">
-                  {categoryVal}
-                </span>
-                <span className="text-[11px] text-slate-400 font-medium">{dateStr}</span>
-              </div>
-            </div>
-          );
-        })}
+              Refresh
+            </button>
+          )}
+          <span className="text-xs font-medium text-slate-500">
+            {loading ? 'Loading...' : `${announcements.length} published`}
+          </span>
+        </div>
       </div>
+
+      {loading && (
+        <div className="py-8 text-center text-slate-400 text-xs flex items-center justify-center gap-2">
+          <div className="w-4 h-4 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+          Loading published announcements from database...
+        </div>
+      )}
+
+      {error && (
+        <div className="p-4 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-700 flex items-center justify-between">
+          <span>{error}</span>
+          {onRefresh && (
+            <button onClick={onRefresh} className="underline font-semibold">Retry</button>
+          )}
+        </div>
+      )}
+
+      {!loading && !error && announcements.length === 0 && (
+        <div className="py-8 text-center text-slate-400 text-xs">
+          No announcements published for students at this time.
+        </div>
+      )}
+
+      {!loading && !error && announcements.length > 0 && (
+        <div className="space-y-2.5">
+          {announcements.map((ann) => {
+            const dateStr = ann.date || (ann.created_at ? new Date(ann.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Recent');
+            const priorityVal = ann.priority || 'medium';
+            const categoryVal = ann.category || 'General';
+            const authorVal = ann.posted_by || ann.posted_by_email;
+            return (
+              <div
+                key={ann.id || ann.title}
+                className="p-3.5 bg-slate-50/80 rounded-xl border border-slate-200/80 hover:border-blue-300 hover:bg-blue-50/30 hover:shadow-sm transition-all duration-150"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <h3 className="text-sm font-bold text-slate-900 leading-snug">{ann.title}</h3>
+                  <span className={`shrink-0 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold ${PRIORITY_STYLES[priorityVal] || PRIORITY_STYLES.low}`}>
+                    {priorityVal}
+                  </span>
+                </div>
+                <p className="text-xs text-slate-600 leading-relaxed mt-1.5">{ann.body}</p>
+                <div className="flex flex-wrap items-center gap-2 mt-2.5 text-[11px]">
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-full font-semibold bg-white text-slate-600 border border-slate-200">
+                    {categoryVal}
+                  </span>
+                  <span className="text-slate-400 font-medium">{dateStr}</span>
+                  {authorVal && (
+                    <span className="text-slate-500 font-medium ml-auto">
+                      Posted by <strong className="text-slate-700">{authorVal}</strong>
+                    </span>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </section>
   );
 }
@@ -314,14 +357,47 @@ function QuickActionsSection({ onGoToChat, onGoToProfile, onGoToServices }) {
 /* ── Main Dashboard ───────────────────────────────────────── */
 
 export default function StudentDashboard({ user, onGoToChat, onGoToProfile, onGoToServices }) {
-  const [announcements, setAnnouncements] = useState(ANNOUNCEMENTS);
+  const [announcements, setAnnouncements] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const fetchAnnouncementsList = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const res = await getAnnouncements();
+      // Respect target audience: Students must only see announcements published for them or for all users
+      const filtered = (res || []).filter(ann => {
+        if (!ann.target_roles || ann.target_roles.length === 0) return true;
+        return ann.target_roles.includes('Student') || ann.target_roles.includes('All');
+      });
+      setAnnouncements(filtered);
+    } catch (err) {
+      setError(err.message || 'Failed to load announcements from database.');
+      setAnnouncements([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    getAnnouncements()
-      .then(res => {
-        if (res && res.length > 0) setAnnouncements(res);
-      })
-      .catch(() => {});
+    fetchAnnouncementsList();
+
+    let subscription = null;
+    if (supabase) {
+      subscription = supabase
+        .channel('public:announcements')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'announcements' }, () => {
+          fetchAnnouncementsList();
+        })
+        .subscribe();
+    }
+
+    return () => {
+      if (subscription && supabase) {
+        supabase.removeChannel(subscription);
+      }
+    };
   }, []);
 
   return (
@@ -343,7 +419,12 @@ export default function StudentDashboard({ user, onGoToChat, onGoToProfile, onGo
         </div>
       </div>
       <div className="bg-white rounded-2xl border border-slate-200/80 p-4 sm:p-5 shadow-sm">
-        <AnnouncementsSection announcements={announcements} />
+        <AnnouncementsSection
+          announcements={announcements}
+          loading={loading}
+          error={error}
+          onRefresh={fetchAnnouncementsList}
+        />
       </div>
     </div>
   );
