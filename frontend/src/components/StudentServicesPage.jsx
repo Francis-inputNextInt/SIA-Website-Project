@@ -99,9 +99,13 @@ const SERVICES = [
 /* ── Status badge styles ───────────────────────────────────── */
 
 const STATUS_STYLE = {
-  pending:    { label: 'Pending',    cls: 'bg-amber-50 text-amber-700 border-amber-200' },
-  processing: { label: 'Processing', cls: 'bg-blue-50 text-blue-700 border-blue-200' },
-  ready:      { label: 'Ready',      cls: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
+  'Pending':    { label: 'Pending',    cls: 'bg-amber-50 text-amber-700 border-amber-200' },
+  'Processing': { label: 'Processing', cls: 'bg-blue-50 text-blue-700 border-blue-200' },
+  'In Review':  { label: 'In Review',  cls: 'bg-indigo-50 text-indigo-700 border-indigo-200' },
+  'Approved':   { label: 'Approved',   cls: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
+  'Completed':  { label: 'Completed',  cls: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
+  'Ready':      { label: 'Ready',      cls: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
+  'Rejected':   { label: 'Rejected',   cls: 'bg-rose-50 text-rose-700 border-rose-200' },
 };
 
 /* ── Submitted banner ──────────────────────────────────────── */
@@ -147,9 +151,59 @@ function ServiceCard({ service, onSelect }) {
   );
 }
 
-/* ── Recent requests panel ─────────────────────────────────── */
+/* ── Recent requests panel & Detail Modal ───────────────────── */
 
-function RecentRequests({ requests, onHide }) {
+function RequestDetailModal({ request, onClose }) {
+  if (!request) return null;
+  const st = STATUS_STYLE[request.status] || STATUS_STYLE.Pending;
+  const dateStr = request.created_at ? new Date(request.created_at).toLocaleString() : 'Recently';
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
+      <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-xl border border-slate-200 space-y-4 animate-in fade-in zoom-in-95 duration-150">
+        <div className="flex items-start justify-between gap-3 pb-3 border-b border-slate-100">
+          <div>
+            <span className="text-[11px] font-bold text-blue-600 uppercase tracking-wider">{request.service_type}</span>
+            <h3 className="text-base font-bold text-slate-900 mt-0.5">{request.title}</h3>
+          </div>
+          <span className={`shrink-0 inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold border ${st.cls}`}>
+            {st.label}
+          </span>
+        </div>
+
+        <div className="space-y-3 text-xs text-slate-600">
+          <div>
+            <p className="font-semibold text-slate-700 mb-1">Submitted Date:</p>
+            <p className="p-2.5 rounded-xl bg-slate-50 border border-slate-200/80 font-medium">{dateStr}</p>
+          </div>
+          <div>
+            <p className="font-semibold text-slate-700 mb-1">Request Details & Notes:</p>
+            <pre className="p-3 rounded-xl bg-slate-50 border border-slate-200/85 font-mono text-[11px] whitespace-pre-wrap text-slate-700 max-h-40 overflow-y-auto">
+              {request.details || 'No additional details.'}
+            </pre>
+          </div>
+          {request.staff_notes && (
+            <div>
+              <p className="font-semibold text-slate-700 mb-1">Staff / Office Remarks:</p>
+              <div className="p-3 rounded-xl bg-blue-50/60 border border-blue-200 text-slate-700 font-medium">
+                {request.staff_notes}
+                {request.handled_by && <p className="text-[10px] text-blue-600 mt-1 font-semibold">— Handled by {request.handled_by}</p>}
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="pt-3 border-t border-slate-100 flex justify-end">
+          <button type="button" onClick={onClose}
+            className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold transition-colors">
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function RecentRequests({ requests, onHide, onSelectRequest }) {
   return (
     <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-sm">
       <div className="flex items-center justify-between mb-4">
@@ -157,23 +211,25 @@ function RecentRequests({ requests, onHide }) {
           <div className="p-1.5 rounded-lg bg-blue-50">
             <Clock className="w-4 h-4 text-blue-600" />
           </div>
-          <h2 className="text-sm font-bold text-slate-900">Submitted Requests</h2>
+          <h2 className="text-sm font-bold text-slate-900">Submitted Requests & Status Tracking</h2>
         </div>
         <button type="button" onClick={onHide} className="text-xs font-semibold text-slate-400 hover:text-slate-600 transition-colors">
           Hide
         </button>
       </div>
       {requests.length === 0 ? (
-        <p className="text-xs text-slate-400 text-center py-4">No requests submitted yet.</p>
+        <p className="text-xs text-slate-400 text-center py-4">No requests submitted yet. Select a service above to submit one.</p>
       ) : (
         <div className="space-y-2">
           {requests.map((r) => {
-            const st = STATUS_STYLE[r.status] || STATUS_STYLE.pending;
+            const st = STATUS_STYLE[r.status] || STATUS_STYLE.Pending;
+            const dateStr = r.created_at ? new Date(r.created_at).toLocaleDateString() : 'Recent';
             return (
-              <div key={r.id} className="flex items-center justify-between gap-3 p-3 rounded-xl bg-slate-50 border border-slate-100">
+              <div key={r.id} onClick={() => onSelectRequest(r)}
+                className="flex items-center justify-between gap-3 p-3 rounded-xl bg-slate-50 border border-slate-200/80 hover:border-blue-300 hover:bg-blue-50/20 cursor-pointer transition-all">
                 <div className="min-w-0">
                   <p className="text-xs font-semibold text-slate-800 truncate">{r.title}</p>
-                  <p className="text-[10px] text-slate-400 font-medium mt-0.5">{r.submittedAt}</p>
+                  <p className="text-[10px] text-slate-400 font-medium mt-0.5">{dateStr} • Click to view details</p>
                 </div>
                 <span className={`shrink-0 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border ${st.cls}`}>
                   {st.label}
@@ -194,6 +250,7 @@ export default function StudentServicesPage({ user, onBack }) {
   const [submittedRequests, setSubmittedRequests] = useState([]);
   const [showRecent, setShowRecent] = useState(true);
   const [loading, setLoading] = useState(true);
+  const [selectedRequest, setSelectedRequest] = useState(null);
 
   useEffect(() => {
     async function loadRequests() {
@@ -258,14 +315,14 @@ export default function StudentServicesPage({ user, onBack }) {
             {submittedRequests.length > 0 && (
               <div className="mt-4 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/20 backdrop-blur-sm border border-white/30 text-xs font-semibold">
                 <CheckCircle2 className="w-3.5 h-3.5" />
-                {submittedRequests.length} request{submittedRequests.length > 1 ? 's' : ''} submitted this session
+                {submittedRequests.length} request{submittedRequests.length > 1 ? 's' : ''} submitted
               </div>
             )}
           </div>
         </div>
 
         {!showRecent && <SubmittedBanner count={submittedRequests.length} onView={() => setShowRecent(true)} />}
-        {showRecent && <RecentRequests requests={submittedRequests} onHide={() => setShowRecent(false)} />}
+        {showRecent && <RecentRequests requests={submittedRequests} onHide={() => setShowRecent(false)} onSelectRequest={setSelectedRequest} />}
 
         {/* Service grid */}
         <div className="bg-white rounded-2xl border border-slate-200/80 p-4 sm:p-6 shadow-sm">
@@ -284,6 +341,8 @@ export default function StudentServicesPage({ user, onBack }) {
         </div>
 
       </div>
+
+      <RequestDetailModal request={selectedRequest} onClose={() => setSelectedRequest(null)} />
     </main>
   );
 }

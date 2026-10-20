@@ -22,13 +22,11 @@ const router = Router();
 // Student endpoints
 router.post('/service-requests', createRequest);
 router.get('/service-requests/mine', getMyRequests);
+router.get('/service-requests/stats', getRequestStats);
 
 // Staff/Faculty endpoints
 router.get('/service-requests', getAllRequests);
 router.patch('/service-requests/:id/status', updateRequestStatus);
-
-// Stats (Admin)
-router.get('/service-requests/stats', getRequestStats);
 
 // Announcements
 router.get('/announcements', getAnnouncements);

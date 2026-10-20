@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   GraduationCap,
   Calendar,
@@ -19,6 +19,7 @@ import {
   ANNOUNCEMENTS,
   QUICK_ACTIONS,
 } from '../../data/dashboardData';
+import { getAnnouncements } from '../../services/serviceRequestService';
 
 /* ── Helpers ──────────────────────────────────────────────── */
 
@@ -206,7 +207,7 @@ function DeadlinesSection() {
 
 /* ── Section: Announcements ───────────────────────────────── */
 
-function AnnouncementsSection() {
+function AnnouncementsSection({ announcements = ANNOUNCEMENTS }) {
   return (
     <section>
       <div className="flex items-center justify-between mb-4">
@@ -216,29 +217,34 @@ function AnnouncementsSection() {
           </div>
           <h2 className="text-sm sm:text-base font-bold text-slate-900 tracking-tight">Announcements</h2>
         </div>
-        <span className="text-xs font-medium text-slate-500">{ANNOUNCEMENTS.length} new</span>
+        <span className="text-xs font-medium text-slate-500">{announcements.length} new</span>
       </div>
       <div className="space-y-2.5">
-        {ANNOUNCEMENTS.map((ann) => (
-          <div
-            key={ann.id}
-            className="p-3.5 bg-slate-50/80 rounded-xl border border-slate-200/80 hover:border-blue-300 hover:bg-blue-50/30 hover:shadow-sm transition-all duration-150"
-          >
-            <div className="flex items-start justify-between gap-2">
-              <h3 className="text-sm font-bold text-slate-900 leading-snug">{ann.title}</h3>
-              <span className={`shrink-0 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold ${PRIORITY_STYLES[ann.priority] || PRIORITY_STYLES.low}`}>
-                {ann.priority}
-              </span>
+        {announcements.map((ann) => {
+          const dateStr = ann.date || (ann.created_at ? new Date(ann.created_at).toLocaleDateString() : 'Recent');
+          const priorityVal = ann.priority || 'medium';
+          const categoryVal = ann.category || 'General';
+          return (
+            <div
+              key={ann.id}
+              className="p-3.5 bg-slate-50/80 rounded-xl border border-slate-200/80 hover:border-blue-300 hover:bg-blue-50/30 hover:shadow-sm transition-all duration-150"
+            >
+              <div className="flex items-start justify-between gap-2">
+                <h3 className="text-sm font-bold text-slate-900 leading-snug">{ann.title}</h3>
+                <span className={`shrink-0 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold ${PRIORITY_STYLES[priorityVal] || PRIORITY_STYLES.low}`}>
+                  {priorityVal}
+                </span>
+              </div>
+              <p className="text-xs text-slate-600 leading-relaxed mt-1.5">{ann.body}</p>
+              <div className="flex items-center gap-2 mt-2.5">
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-white text-slate-600 border border-slate-200">
+                  {categoryVal}
+                </span>
+                <span className="text-[11px] text-slate-400 font-medium">{dateStr}</span>
+              </div>
             </div>
-            <p className="text-xs text-slate-600 leading-relaxed mt-1.5">{ann.body}</p>
-            <div className="flex items-center gap-2 mt-2.5">
-              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-white text-slate-600 border border-slate-200">
-                {ann.category}
-              </span>
-              <span className="text-[11px] text-slate-400 font-medium">{ann.date}</span>
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </section>
   );
@@ -308,6 +314,16 @@ function QuickActionsSection({ onGoToChat, onGoToProfile, onGoToServices }) {
 /* ── Main Dashboard ───────────────────────────────────────── */
 
 export default function StudentDashboard({ user, onGoToChat, onGoToProfile, onGoToServices }) {
+  const [announcements, setAnnouncements] = useState(ANNOUNCEMENTS);
+
+  useEffect(() => {
+    getAnnouncements()
+      .then(res => {
+        if (res && res.length > 0) setAnnouncements(res);
+      })
+      .catch(() => {});
+  }, []);
+
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6">
       <WelcomeSection user={user} />
@@ -327,7 +343,7 @@ export default function StudentDashboard({ user, onGoToChat, onGoToProfile, onGo
         </div>
       </div>
       <div className="bg-white rounded-2xl border border-slate-200/80 p-4 sm:p-5 shadow-sm">
-        <AnnouncementsSection />
+        <AnnouncementsSection announcements={announcements} />
       </div>
     </div>
   );

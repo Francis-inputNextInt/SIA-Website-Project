@@ -64,14 +64,13 @@ export default function AdminDashboard({ user, onGoToChat, onGoToProfile, onGoTo
 
   useEffect(() => { loadData(); }, []);
 
-  const handleToggleRole = async (id, currentRole) => {
-    const nextRole = currentRole === 'Student' ? 'Staff' : currentRole === 'Staff' ? 'Admin' : 'Student';
+  const handleRoleChange = async (id, newRole) => {
     try {
-      await updateUserRole(id, nextRole);
+      await updateUserRole(id, newRole);
+      setUsersList(prev => prev.map(u => u.id === id ? { ...u, role: newRole } : u));
     } catch (err) {
-      console.warn('Role update fallback:', err);
+      alert(err.message || 'Failed to update user role.');
     }
-    setUsersList(prev => prev.map(u => u.id === id ? { ...u, role: nextRole } : u));
   };
 
   const filteredUsers = usersList.filter(u =>
@@ -144,12 +143,28 @@ export default function AdminDashboard({ user, onGoToChat, onGoToProfile, onGoTo
                 </td>
                 <td className="py-3 px-3 text-slate-500">{u.department}</td>
                 <td className="py-3 px-3">
-                  <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${u.role === 'Admin' ? 'bg-rose-100 text-rose-800' : u.role === 'Staff' ? 'bg-emerald-100 text-emerald-800' : 'bg-blue-100 text-blue-800'}`}>
+                  <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                    u.role === 'Admin' ? 'bg-rose-100 text-rose-800' :
+                    u.role === 'Staff' ? 'bg-emerald-100 text-emerald-800' :
+                    u.role === 'Faculty' ? 'bg-violet-100 text-violet-800' :
+                    u.role === 'Applicant' ? 'bg-amber-100 text-amber-800' :
+                    'bg-blue-100 text-blue-800'
+                  }`}>
                     {u.role}
                   </span>
                 </td>
                 <td className="py-3 px-3 text-right">
-                  <button onClick={() => toggleUserRole(u.id)} className="px-2.5 py-1 bg-slate-900 text-white rounded text-[11px] font-semibold">Cycle Role</button>
+                  <select
+                    value={u.role}
+                    onChange={(e) => handleRoleChange(u.id, e.target.value)}
+                    className="px-2 py-1 rounded border border-slate-200 text-xs font-semibold bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-rose-500/30"
+                  >
+                    <option value="Student">Student</option>
+                    <option value="Faculty">Faculty</option>
+                    <option value="Staff">Staff</option>
+                    <option value="Admin">Admin</option>
+                    <option value="Applicant">Applicant</option>
+                  </select>
                 </td>
               </tr>
             ))}

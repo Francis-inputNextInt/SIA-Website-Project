@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { ArrowLeft, Send, CheckCircle2, Loader2, FileText, Info } from 'lucide-react';
+import { createServiceRequest } from '../services/serviceRequestService';
+
 
 const INPUT = 'w-full bg-white text-slate-800 placeholder-slate-400 text-sm px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all disabled:bg-slate-50 disabled:opacity-60';
 const SELECT = INPUT + ' cursor-pointer';
@@ -73,11 +75,21 @@ function EnrollmentForm({ service, onBack, onSubmitted }) {
   const [notes, setNotes] = useState('');
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
-  function handleSubmit(e) {
-    e.preventDefault(); setBusy(true);
-    setTimeout(() => { setBusy(false); setDone(true);
-      onSubmitted({ id: 'req-'+Date.now(), title: 'Enrollment - '+sem+' '+ay, status: 'pending', submittedAt: new Date().toLocaleString() });
-    }, 1200);
+  async function handleSubmit(e) {
+    e.preventDefault();
+    setBusy(true);
+    try {
+      const title = `Enrollment - ${sem} ${ay} (${type})`;
+      const details = `Type: ${type}\nSubjects:\n${subjects || 'None'}\nNotes: ${notes || 'None'}`;
+      const metadata = { sem, ay, enrollment_type: type, subjects, notes };
+      const req = await createServiceRequest({ service_type: 'enrollment', title, details, metadata });
+      setBusy(false);
+      setDone(true);
+      if (onSubmitted) onSubmitted(req);
+    } catch (err) {
+      setBusy(false);
+      alert(err.message || 'Failed to submit enrollment request.');
+    }
   }
   return (
     <FormWrap service={service} onSubmit={handleSubmit} busy={busy} done={done} onBack={onBack}
@@ -115,11 +127,22 @@ function RequestDocumentsForm({ service, onBack, onSubmitted }) {
   const [notes, setNotes] = useState('');
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
-  function handleSubmit(e) {
-    e.preventDefault(); if (!purpose.trim()) return; setBusy(true);
-    setTimeout(() => { setBusy(false); setDone(true);
-      onSubmitted({ id: 'req-'+Date.now(), title: 'Document - '+docType, status: 'pending', submittedAt: new Date().toLocaleString() });
-    }, 1200);
+  async function handleSubmit(e) {
+    e.preventDefault();
+    if (!purpose.trim()) return;
+    setBusy(true);
+    try {
+      const title = `Document - ${docType}`;
+      const details = `Purpose: ${purpose}\nCopies: ${copies}\nRelease: ${release}\nNotes: ${notes || 'None'}`;
+      const metadata = { docType, purpose, copies, release, notes };
+      const req = await createServiceRequest({ service_type: 'document', title, details, metadata });
+      setBusy(false);
+      setDone(true);
+      if (onSubmitted) onSubmitted(req);
+    } catch (err) {
+      setBusy(false);
+      alert(err.message || 'Failed to submit document request.');
+    }
   }
   return (
     <FormWrap service={service} onSubmit={handleSubmit} busy={busy} done={done} onBack={onBack}
@@ -151,11 +174,22 @@ function TranscriptForm({ service, onBack, onSubmitted }) {
   const [notes, setNotes] = useState('');
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
-  function handleSubmit(e) {
-    e.preventDefault(); if (!purpose) return; setBusy(true);
-    setTimeout(() => { setBusy(false); setDone(true);
-      onSubmitted({ id: 'req-'+Date.now(), title: 'Transcript of Records (TOR) Request', status: 'pending', submittedAt: new Date().toLocaleString() });
-    }, 1200);
+  async function handleSubmit(e) {
+    e.preventDefault();
+    if (!purpose) return;
+    setBusy(true);
+    try {
+      const title = 'Transcript of Records (TOR)';
+      const details = `Purpose: ${purpose}\nAddressee: ${addressee || 'None'}\nCopies: ${copies}\nRelease: ${release}\nNotes: ${notes || 'None'}`;
+      const metadata = { purpose, addressee, copies, release, notes };
+      const req = await createServiceRequest({ service_type: 'transcript', title, details, metadata });
+      setBusy(false);
+      setDone(true);
+      if (onSubmitted) onSubmitted(req);
+    } catch (err) {
+      setBusy(false);
+      alert(err.message || 'Failed to submit transcript request.');
+    }
   }
   return (
     <FormWrap service={service} onSubmit={handleSubmit} busy={busy} done={done} onBack={onBack}
@@ -192,11 +226,22 @@ function CertificateForm({ service, onBack, onSubmitted }) {
   const [notes, setNotes] = useState('');
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
-  function handleSubmit(e) {
-    e.preventDefault(); if (!purpose) return; setBusy(true);
-    setTimeout(() => { setBusy(false); setDone(true);
-      onSubmitted({ id: 'req-'+Date.now(), title: 'Certificate - '+certType, status: 'pending', submittedAt: new Date().toLocaleString() });
-    }, 1200);
+  async function handleSubmit(e) {
+    e.preventDefault();
+    if (!purpose) return;
+    setBusy(true);
+    try {
+      const title = `Certificate - ${certType}`;
+      const details = `Purpose: ${purpose}\nCopies: ${copies}\nRelease: ${release}\nNotes: ${notes || 'None'}`;
+      const metadata = { certType, purpose, copies, release, notes };
+      const req = await createServiceRequest({ service_type: 'certificate', title, details, metadata });
+      setBusy(false);
+      setDone(true);
+      if (onSubmitted) onSubmitted(req);
+    } catch (err) {
+      setBusy(false);
+      alert(err.message || 'Failed to submit certificate request.');
+    }
   }
   return (
     <FormWrap service={service} onSubmit={handleSubmit} busy={busy} done={done} onBack={onBack}
@@ -231,11 +276,21 @@ function ScholarshipForm({ service, onBack, onSubmitted }) {
   const [notes, setNotes] = useState('');
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
-  function handleSubmit(e) {
-    e.preventDefault(); setBusy(true);
-    setTimeout(() => { setBusy(false); setDone(true);
-      onSubmitted({ id: 'req-'+Date.now(), title: 'Scholarship - '+action, status: 'pending', submittedAt: new Date().toLocaleString() });
-    }, 1200);
+  async function handleSubmit(e) {
+    e.preventDefault();
+    setBusy(true);
+    try {
+      const title = `Scholarship - ${action} (${schType})`;
+      const details = `Action: ${action}\nType: ${schType}\nGWA: ${gwa || 'N/A'}\nUnits: ${units || 'N/A'}\nNotes: ${notes || 'None'}`;
+      const metadata = { action, schType, gwa, units, notes };
+      const req = await createServiceRequest({ service_type: 'scholarship', title, details, metadata });
+      setBusy(false);
+      setDone(true);
+      if (onSubmitted) onSubmitted(req);
+    } catch (err) {
+      setBusy(false);
+      alert(err.message || 'Failed to submit scholarship request.');
+    }
   }
   return (
     <FormWrap service={service} onSubmit={handleSubmit} busy={busy} done={done} onBack={onBack}
@@ -267,11 +322,21 @@ function ClearanceForm({ service, onBack, onSubmitted }) {
   const [notes, setNotes] = useState('');
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
-  function handleSubmit(e) {
-    e.preventDefault(); setBusy(true);
-    setTimeout(() => { setBusy(false); setDone(true);
-      onSubmitted({ id: 'req-'+Date.now(), title: 'Clearance - '+clearType, status: 'pending', submittedAt: new Date().toLocaleString() });
-    }, 1200);
+  async function handleSubmit(e) {
+    e.preventDefault();
+    setBusy(true);
+    try {
+      const title = `Clearance - ${clearType}`;
+      const details = `Semester: ${sem}\nNotes: ${notes || 'None'}`;
+      const metadata = { clearType, sem, notes };
+      const req = await createServiceRequest({ service_type: 'clearance', title, details, metadata });
+      setBusy(false);
+      setDone(true);
+      if (onSubmitted) onSubmitted(req);
+    } catch (err) {
+      setBusy(false);
+      alert(err.message || 'Failed to submit clearance request.');
+    }
   }
   return (
     <FormWrap service={service} onSubmit={handleSubmit} busy={busy} done={done} onBack={onBack}
@@ -303,11 +368,22 @@ function IdConcernsForm({ service, onBack, onSubmitted }) {
   const [notes, setNotes] = useState('');
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
-  function handleSubmit(e) {
-    e.preventDefault(); if (!reason.trim()) return; setBusy(true);
-    setTimeout(() => { setBusy(false); setDone(true);
-      onSubmitted({ id: 'req-'+Date.now(), title: 'ID Concern - '+concern, status: 'pending', submittedAt: new Date().toLocaleString() });
-    }, 1200);
+  async function handleSubmit(e) {
+    e.preventDefault();
+    if (!reason.trim()) return;
+    setBusy(true);
+    try {
+      const title = `ID Concern - ${concern}`;
+      const details = `Reason: ${reason}\nNotes: ${notes || 'None'}`;
+      const metadata = { concern, reason, notes };
+      const req = await createServiceRequest({ service_type: 'id_concern', title, details, metadata });
+      setBusy(false);
+      setDone(true);
+      if (onSubmitted) onSubmitted(req);
+    } catch (err) {
+      setBusy(false);
+      alert(err.message || 'Failed to submit ID request.');
+    }
   }
   return (
     <FormWrap service={service} onSubmit={handleSubmit} busy={busy} done={done} onBack={onBack}
@@ -333,11 +409,22 @@ function RegistrarForm({ service, user, onBack, onSubmitted }) {
   const [contact, setContact] = useState(user && user.email ? user.email : '');
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
-  function handleSubmit(e) {
-    e.preventDefault(); if (!concern || !details.trim()) return; setBusy(true);
-    setTimeout(() => { setBusy(false); setDone(true);
-      onSubmitted({ id: 'req-'+Date.now(), title: 'Registrar - '+concern, status: 'pending', submittedAt: new Date().toLocaleString() });
-    }, 1200);
+  async function handleSubmit(e) {
+    e.preventDefault();
+    if (!concern || !details.trim()) return;
+    setBusy(true);
+    try {
+      const title = `Registrar - ${concern}`;
+      const reqDetails = `Details: ${details}\nContact: ${contact || 'N/A'}`;
+      const metadata = { concern, contact };
+      const req = await createServiceRequest({ service_type: 'registrar', title, details: reqDetails, metadata });
+      setBusy(false);
+      setDone(true);
+      if (onSubmitted) onSubmitted(req);
+    } catch (err) {
+      setBusy(false);
+      alert(err.message || 'Failed to submit registrar concern.');
+    }
   }
   return (
     <FormWrap service={service} onSubmit={handleSubmit} busy={busy} done={done} onBack={onBack}
@@ -365,11 +452,22 @@ function PaymentForm({ service, user, onBack, onSubmitted }) {
   const [contact, setContact] = useState(user && user.email ? user.email : '');
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
-  function handleSubmit(e) {
-    e.preventDefault(); if (!concern || !details.trim()) return; setBusy(true);
-    setTimeout(() => { setBusy(false); setDone(true);
-      onSubmitted({ id: 'req-'+Date.now(), title: 'Payment - '+concern, status: 'pending', submittedAt: new Date().toLocaleString() });
-    }, 1200);
+  async function handleSubmit(e) {
+    e.preventDefault();
+    if (!concern || !details.trim()) return;
+    setBusy(true);
+    try {
+      const title = `Payment - ${concern}`;
+      const reqDetails = `Amount: ${amount ? '₱' + amount : 'N/A'}\nDetails: ${details}\nContact: ${contact || 'N/A'}`;
+      const metadata = { concern, amount, contact };
+      const req = await createServiceRequest({ service_type: 'payment', title, details: reqDetails, metadata });
+      setBusy(false);
+      setDone(true);
+      if (onSubmitted) onSubmitted(req);
+    } catch (err) {
+      setBusy(false);
+      alert(err.message || 'Failed to submit payment concern.');
+    }
   }
   return (
     <FormWrap service={service} onSubmit={handleSubmit} busy={busy} done={done} onBack={onBack}
