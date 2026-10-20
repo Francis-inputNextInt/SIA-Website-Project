@@ -9,6 +9,7 @@ import chatRouter from './routes/chat.js';
 import healthRouter from './routes/health.js';
 import authRoutes from './routes/authRoutes.js';
 import profileRoutes from './routes/profileRoutes.js';
+import serviceRequestRoutes from './routes/serviceRequestRoutes.js';
 
 export const app = express();
 
@@ -21,6 +22,7 @@ app.use('/api', healthRouter);
 app.use('/api', chatRouter);
 app.use('/api', authRoutes);
 app.use('/api', profileRoutes);
+app.use('/api', serviceRequestRoutes);
 
 // ── 404 handler ────────────────────────────────────────────
 app.use((req, res) => {

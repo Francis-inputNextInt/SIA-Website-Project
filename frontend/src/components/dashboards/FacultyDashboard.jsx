@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   FACULTY_METRICS,
   FACULTY_CLASSES,
@@ -6,12 +6,13 @@ import {
   FACULTY_ANNOUNCEMENTS
 } from '../../data/dashboardData';
 import {
-  BookOpen,
-  Users,
-  Megaphone,
-  MessageSquare,
-  Building2,
-  Clock
+  getAllServiceRequests,
+  updateServiceRequestStatus,
+  createAnnouncement,
+  getAnnouncements
+} from '../../services/serviceRequestService';
+import {
+  BookOpen, Users, Megaphone, MessageSquare, Building2, Clock, RefreshCw, CheckCircle2
 } from 'lucide-react';
 
 function getGreeting() {
@@ -22,14 +23,63 @@ function getGreeting() {
 }
 
 export default function FacultyDashboard({ user, onGoToChat, onGoToProfile, onGoToServices }) {
-  const [inquiries, setInquiries] = useState(FACULTY_INQUIRIES);
+  const [inquiries, setInquiries] = useState([]);
   const [filter, setFilter] = useState('All');
+  const [announcements, setAnnouncements] = useState([]);
+  const [refreshing, setRefreshing] = useState(false);
+  const [showAnnModal, setShowAnnModal] = useState(false);
+  const [newTitle, setNewTitle] = useState('');
+  const [newBody, setNewBody] = useState('');
 
-  const updateInquiryStatus = (id, newStatus) => {
-    setInquiries(inquiries.map(i => i.id === id ? { ...i, status: newStatus } : i));
+  const loadData = async () => {
+    try {
+      setRefreshing(true);
+      const [reqs, anns] = await Promise.all([
+        getAllServiceRequests().catch(() => []),
+        getAnnouncements().catch(() => [])
+      ]);
+      if (reqs && reqs.length > 0) {
+        setInquiries(reqs.map(r => ({
+          id: r.id,
+          student: r.student_name || 'Student',
+          studentId: r.student_id || '',
+          subject: r.title || r.service_type,
+          date: new Date(r.created_at).toLocaleDateString(),
+          status: r.status,
+          details: r.details
+        })));
+      } else {
+        setInquiries(FACULTY_INQUIRIES);
+      }
+      if (anns && anns.length > 0) setAnnouncements(anns);
+      else setAnnouncements(FACULTY_ANNOUNCEMENTS);
+    } catch {
+      setInquiries(FACULTY_INQUIRIES);
+      setAnnouncements(FACULTY_ANNOUNCEMENTS);
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  useEffect(() => { loadData(); }, []);
+
+  const handleUpdateStatus = async (id, newStatus) => {
+    try { await updateServiceRequestStatus(id, newStatus); } catch (e) { console.warn(e); }
+    setInquiries(prev => prev.map(i => i.id === id ? { ...i, status: newStatus } : i));
+  };
+
+  const handlePostAnnouncement = async (e) => {
+    e.preventDefault();
+    if (!newTitle.trim() || !newBody.trim()) return;
+    try {
+      const ann = await createAnnouncement({ title: newTitle.trim(), body: newBody.trim(), category: 'Faculty Notice' });
+      setAnnouncements(prev => [ann, ...prev]);
+    } catch (err) { alert(err.message || 'Failed to post.'); }
+    setNewTitle(''); setNewBody(''); setShowAnnModal(false);
   };
 
   const filteredInquiries = filter === 'All' ? inquiries : inquiries.filter(i => i.status === filter);
+
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6">
@@ -43,7 +93,7 @@ export default function FacultyDashboard({ user, onGoToChat, onGoToProfile, onGo
               {getGreeting()}, {user.name}!
             </h1>
             <p className="mt-1.5 text-sm sm:text-base text-indigo-100 font-medium">
-              Faculty Portal & Academic Advising Center
+              Faculty Portal &amp; Academic Advising Center
             </p>
             <div className="flex flex-wrap gap-2 mt-3">
               <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-white/15 backdrop-blur-sm border border-white/20">
@@ -58,12 +108,26 @@ export default function FacultyDashboard({ user, onGoToChat, onGoToProfile, onGo
               )}
             </div>
           </div>
-          <div className="hidden sm:flex items-center justify-center">
-            <div className="w-16 h-16 rounded-2xl bg-white/25 text-white flex items-center justify-center font-bold text-2xl shadow-lg ring-2 ring-white/20">
-              {user.name.charAt(0)}
-            </div>
-          </div>
+          <button onClick={loadData} disabled={refreshing} className="self-start sm:self-auto inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white/20 hover:bg-white/30 text-white text-xs font-bold transition-all">
+            <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin' : ''}`} />
+            Sync Data
+          </button>
         </div>
+      </div>
+
+      {/* Metrics */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {[
+          { label: 'Active Classes', value: FACULTY_CLASSES.length, color: 'text-indigo-600' },
+          { label: 'Pending Inquiries', value: inquiries.filter(i => i.status === 'Pending').length, color: 'text-amber-600' },
+          { label: 'In Review', value: inquiries.filter(i => i.status === 'In Review').length, color: 'text-blue-600' },
+          { label: 'Approved', value: inquiries.filter(i => i.status === 'Approved').length, color: 'text-emerald-600' },
+        ].map(m => (
+          <div key={m.label} className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm">
+            <p className="text-xs font-bold text-slate-400 uppercase">{m.label}</p>
+            <p className={`text-2xl font-extrabold mt-1 ${m.color}`}>{m.value}</p>
+          </div>
+        ))}
       </div>
 
       {/* Faculty Quick Access Bar */}

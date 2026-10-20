@@ -18,12 +18,6 @@ import {
   DEADLINES,
   ANNOUNCEMENTS,
   QUICK_ACTIONS,
-  STAFF_METRICS,
-  STAFF_TICKETS,
-  STAFF_ANNOUNCEMENTS,
-  ADMIN_METRICS,
-  ADMIN_USERS,
-  ADMIN_SYSTEM_LOGS
 } from '../../data/dashboardData';
 
 /* ── Helpers ──────────────────────────────────────────────── */
@@ -313,44 +307,29 @@ function QuickActionsSection({ onGoToChat, onGoToProfile, onGoToServices }) {
 
 /* ── Main Dashboard ───────────────────────────────────────── */
 
-import React from 'react';
-import StudentDashboardContent from './StudentDashboardContent';
-import StaffDashboard from './StaffDashboard';
-import FacultyDashboard from './FacultyDashboard';
-import AdminDashboard from './AdminDashboard';
-
 export default function StudentDashboard({ user, onGoToChat, onGoToProfile, onGoToServices }) {
-  const role = user?.role?.toLowerCase() || 'student';
-
-  if (role === 'faculty') {
-    return (
-      <main className="flex-1 overflow-y-auto bg-slate-50/50">
-        <FacultyDashboard user={user} onGoToChat={onGoToChat} onGoToProfile={onGoToProfile} onGoToServices={onGoToServices} />
-      </main>
-    );
-  }
-
-  if (role === 'staff') {
-    return (
-      <main className="flex-1 overflow-y-auto bg-slate-50/50">
-        <StaffDashboard user={user} onGoToChat={onGoToChat} onGoToProfile={onGoToProfile} onGoToServices={onGoToServices} />
-      </main>
-    );
-  }
-
-  if (role === 'admin') {
-    return (
-      <main className="flex-1 overflow-y-auto bg-slate-50/50">
-        <AdminDashboard user={user} onGoToChat={onGoToChat} onGoToProfile={onGoToProfile} onGoToServices={onGoToServices} />
-      </main>
-    );
-  }
-
-  // Default: Student Dashboard
   return (
-    <main className="flex-1 overflow-y-auto bg-slate-50/50">
-      <StudentDashboardContent user={user} onGoToChat={onGoToChat} onGoToProfile={onGoToProfile} onGoToServices={onGoToServices} />
-    </main>
+    <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6">
+      <WelcomeSection user={user} />
+      <div className="bg-white rounded-2xl border border-slate-200/80 p-4 sm:p-5 shadow-sm">
+        <QuickActionsSection onGoToChat={onGoToChat} onGoToProfile={onGoToProfile} onGoToServices={onGoToServices} />
+      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2">
+          <div className="bg-white rounded-2xl border border-slate-200/80 p-4 sm:p-5 shadow-sm">
+            <ScheduleSection />
+          </div>
+        </div>
+        <div>
+          <div className="bg-white rounded-2xl border border-slate-200/80 p-4 sm:p-5 shadow-sm">
+            <DeadlinesSection />
+          </div>
+        </div>
+      </div>
+      <div className="bg-white rounded-2xl border border-slate-200/80 p-4 sm:p-5 shadow-sm">
+        <AnnouncementsSection />
+      </div>
+    </div>
   );
 }
 

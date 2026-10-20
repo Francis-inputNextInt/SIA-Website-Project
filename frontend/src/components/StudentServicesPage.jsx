@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   ArrowLeft,
   ClipboardList,
@@ -14,8 +14,10 @@ import {
   CheckCircle2,
   Clock,
   ArrowRight,
+  RefreshCw,
 } from 'lucide-react';
 import ServiceRequestForm from './StudentServiceForms';
+import { getMyServiceRequests } from '../services/serviceRequestService';
 
 /* ── Service catalogue ─────────────────────────────────────── */
 
@@ -190,7 +192,22 @@ function RecentRequests({ requests, onHide }) {
 export default function StudentServicesPage({ user, onBack }) {
   const [activeService, setActiveService] = useState(null);
   const [submittedRequests, setSubmittedRequests] = useState([]);
-  const [showRecent, setShowRecent] = useState(false);
+  const [showRecent, setShowRecent] = useState(true);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadRequests() {
+      try {
+        const reqs = await getMyServiceRequests();
+        setSubmittedRequests(reqs);
+      } catch (err) {
+        console.warn('Could not load service requests from Supabase:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadRequests();
+  }, []);
 
   const handleSubmitted = (req) => {
     setSubmittedRequests((prev) => [req, ...prev]);
