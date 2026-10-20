@@ -1,0 +1,70 @@
+      {activeTab === 'overview' && (
+        <div className="space-y-6">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm space-y-1">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-400 uppercase">Total Users</span>
+                <Users className="w-4 h-4 text-blue-500" />
+              </div>
+              <p className="text-3xl font-extrabold text-slate-900">{analytics.totalUsers || usersList.length}</p>
+              <p className="text-[11px] font-semibold text-emerald-600">Active: {analytics.activeUsers || usersList.filter(u => u.enrolled).length}</p>
+            </div>
+            <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm space-y-1">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-400 uppercase">Service Requests</span>
+                <FileText className="w-4 h-4 text-indigo-500" />
+              </div>
+              <p className="text-3xl font-extrabold text-slate-900">{analytics.totalRequests || requestsList.length}</p>
+              <p className="text-[11px] font-semibold text-amber-600">Pending: {analytics.pendingRequests || requestsList.filter(r => r.status === 'Pending').length}</p>
+            </div>
+            <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm space-y-1">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-400 uppercase">System Uptime</span>
+                <Activity className="w-4 h-4 text-emerald-500" />
+              </div>
+              <p className="text-3xl font-extrabold text-slate-900">{analytics.systemUptime}</p>
+              <p className="text-[11px] font-semibold text-emerald-600">All services operational</p>
+            </div>
+            <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm space-y-1">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-400 uppercase">Audit Logs</span>
+                <Database className="w-4 h-4 text-rose-500" />
+              </div>
+              <p className="text-3xl font-extrabold text-slate-900">{systemLogs.length}</p>
+              <p className="text-[11px] font-semibold text-slate-500">Secured &amp; immutable</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-sm space-y-4">
+              <h2 className="text-base font-bold text-slate-900">User Role Distribution</h2>
+              <div className="space-y-3">
+                {Object.entries(analytics.roleBreakdown || { Student: usersList.filter(u => u.role === 'Student').length, Faculty: usersList.filter(u => u.role === 'Faculty').length, Staff: usersList.filter(u => u.role === 'Staff').length, Admin: usersList.filter(u => u.role === 'Admin').length }).map(([role, count]) => (
+                  <div key={role} className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-200/60 text-xs">
+                    <span className="font-bold text-slate-800">{role}</span>
+                    <span className="px-2.5 py-1 rounded-full font-bold bg-white text-slate-700 shadow-sm">{count} users</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-sm space-y-4">
+              <h2 className="text-base font-bold text-slate-900">Service Request Status Breakdown</h2>
+              <div className="space-y-3">
+                {Object.entries(analytics.requestStatusBreakdown || { Pending: 0, Processing: 0, Completed: 0 }).map(([status, count]) => (
+                  <div key={status} className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-200/60 text-xs">
+                    <span className="font-bold text-slate-800">{status}</span>
+                    <span className={`px-2.5 py-1 rounded-full font-bold shadow-sm ${
+                      status === 'Pending' ? 'bg-amber-100 text-amber-800' :
+                      status === 'Processing' ? 'bg-blue-100 text-blue-800' :
+                      'bg-emerald-100 text-emerald-800'
+                    }`}>
+                      {count} requests
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}

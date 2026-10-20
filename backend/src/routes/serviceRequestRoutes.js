@@ -13,8 +13,13 @@ import {
   createAnnouncement,
   deleteAnnouncement,
   getAllUsers,
+  createUser,
   updateUserRole,
-  getSystemLogs
+  deleteUser,
+  getSystemLogs,
+  getSystemSettings,
+  updateSystemSettings,
+  getSystemAnalytics
 } from '../controllers/serviceRequestController.js';
 
 const router = Router();
@@ -33,11 +38,14 @@ router.get('/announcements', getAnnouncements);
 router.post('/announcements', createAnnouncement);
 router.delete('/announcements/:id', deleteAnnouncement);
 
-// Admin: user management
+// Admin: user management & analytics & settings
 router.get('/admin/users', getAllUsers);
+router.post('/admin/users', createUser);
 router.patch('/admin/users/:id/role', updateUserRole);
-
-// Admin: system logs
+router.delete('/admin/users/:id', deleteUser);
 router.get('/admin/logs', getSystemLogs);
+router.get('/admin/analytics', getSystemAnalytics);
+router.get('/admin/settings', getSystemSettings);
+router.patch('/admin/settings', updateSystemSettings);
 
 export default router;

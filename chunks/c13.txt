@@ -1,0 +1,46 @@
+            <div className="flex items-center justify-between p-4 rounded-xl bg-slate-50 border border-slate-200/80">
+              <div>
+                <label className="font-bold text-slate-900 block">Open Self-Registration</label>
+                <span className="text-slate-500">Allow new students and applicants to register accounts.</span>
+              </div>
+              <input
+                type="checkbox"
+                checked={settings.self_registration}
+                onChange={e => setSettings({ ...settings, self_registration: e.target.checked })}
+                className="w-5 h-5 accent-rose-600 rounded cursor-pointer"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="font-bold text-slate-900 block">Current Academic Term</label>
+              <input
+                type="text"
+                value={settings.academic_term}
+                onChange={e => setSettings({ ...settings, academic_term: e.target.value })}
+                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-rose-500/20"
+                required
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="font-bold text-slate-900 block">Admin Notification Email</label>
+              <input
+                type="email"
+                value={settings.notification_email}
+                onChange={e => setSettings({ ...settings, notification_email: e.target.value })}
+                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-rose-500/20"
+                required
+              />
+            </div>
+
+            <div className="pt-2">
+              <button
+                type="submit"
+                className="px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs shadow-sm transition-colors"
+              >
+                Save Configuration Changes
+              </button>
+            </div>
+          </form>
+        </div>
+      )}

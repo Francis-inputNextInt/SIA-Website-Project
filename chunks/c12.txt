@@ -1,0 +1,20 @@
+      {activeTab === 'settings' && (
+        <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-sm max-w-3xl space-y-6">
+          <div>
+            <h2 className="text-base font-bold text-slate-900">System Configuration &amp; Parameters</h2>
+            <p className="text-xs text-slate-500 mt-0.5">Configure campus-wide platform toggles, academic terms, and security settings.</p>
+          </div>
+
+          <form onSubmit={handleSaveSettings} className="space-y-5 text-xs">
+            <div className="flex items-center justify-between p-4 rounded-xl bg-slate-50 border border-slate-200/80">
+              <div>
+                <label className="font-bold text-slate-900 block">System Maintenance Mode</label>
+                <span className="text-slate-500">Disable non-admin logins and display maintenance notice.</span>
+              </div>
+              <input
+                type="checkbox"
+                checked={settings.maintenance_mode}
+                onChange={e => setSettings({ ...settings, maintenance_mode: e.target.checked })}
+                className="w-5 h-5 accent-rose-600 rounded cursor-pointer"
+              />
+            </div>

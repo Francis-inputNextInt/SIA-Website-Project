@@ -1,0 +1,27 @@
+  const [refreshing, setRefreshing] = useState(false);
+  const [search, setSearch] = useState('');
+  const [userRoleFilter, setUserRoleFilter] = useState('All');
+  const [requestStatusFilter, setRequestStatusFilter] = useState('All');
+  const [requestTypeFilter, setRequestTypeFilter] = useState('All');
+
+  const [showAddUserModal, setShowAddUserModal] = useState(false);
+  const [newUserName, setNewUserName] = useState('');
+  const [newUserEmail, setNewUserEmail] = useState('');
+  const [newUserRole, setNewUserRole] = useState('Student');
+  const [newUserDept, setNewUserDept] = useState('Computer Science');
+  const [newUserStudentId, setNewUserStudentId] = useState('');
+
+  const [showAnnModal, setShowAnnModal] = useState(false);
+  const [annTitle, setAnnTitle] = useState('');
+  const [annBody, setAnnBody] = useState('');
+  const [annPriority, setAnnPriority] = useState('medium');
+  const [annCategory, setAnnCategory] = useState('Academic');
+
+  const [selectedRequest, setSelectedRequest] = useState(null);
+  const [staffNotes, setStaffNotes] = useState('');
+  const [toastMessage, setToastMessage] = useState('');
+
+  const showToast = (msg) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(''), 3500);
+  };

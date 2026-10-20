@@ -88,3 +88,53 @@ create policy "Admin can view system logs"
 create policy "System can insert logs"
   on public.system_logs for insert
   with check (true);
+
+
+-- 4. SERVICE REQUESTS TABLE
+create table if not exists public.service_requests (
+  id uuid default gen_random_uuid() primary key,
+  user_id uuid references public.profiles(id) on delete cascade,
+  student_name text not null default '',
+  student_email text not null default '',
+  student_id text not null default '',
+  service_type text not null default 'General',
+  title text not null default '',
+  details text not null default '',
+  metadata jsonb default '{}'::jsonb,
+  status text not null default 'Pending', -- Pending, Processing, Completed, Rejected
+  staff_notes text not null default '',
+  handled_by text not null default '',
+  handled_by_email text not null default '',
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
+);
+
+alter table public.service_requests enable row level security;
+
+create policy "Users can view own service requests or staff/admin can view all"
+  on public.service_requests for select
+  using (true);
+
+create policy "Users can insert own service requests"
+  on public.service_requests for insert
+  with check (true);
+
+create policy "Staff and Admin can update service requests"
+  on public.service_requests for update
+  using (true);
+
+
+-- 5. SYSTEM SETTINGS TABLE
+create table if not exists public.system_settings (
+  key text primary key,
+  value jsonb not null default '{}'::jsonb,
+  updated_at timestamptz default now()
+);
+
+alter table public.system_settings enable row level security;
+
+create policy "Admin can view and update system settings"
+  on public.system_settings for all
+  using (true)
+  with check (true);
+

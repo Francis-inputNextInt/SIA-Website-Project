@@ -1,0 +1,79 @@
+      {showAnnModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
+          <form onSubmit={handleCreateAnnouncement} className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <h3 className="text-base font-bold text-slate-900">Post Campus Announcement</h3>
+              <button type="button" onClick={() => setShowAnnModal(false)} className="text-slate-400 hover:text-slate-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="space-y-3 text-xs">
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">Title</label>
+                <input
+                  type="text"
+                  value={annTitle}
+                  onChange={e => setAnnTitle(e.target.value)}
+                  placeholder="Announcement title..."
+                  className="w-full px-3 py-2 rounded-xl border border-slate-200 font-medium"
+                  required
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">Category</label>
+                  <select
+                    value={annCategory}
+                    onChange={e => setAnnCategory(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl border border-slate-200 font-semibold bg-white"
+                  >
+                    <option value="Academic">Academic</option>
+                    <option value="IT Services">IT Services</option>
+                    <option value="Campus Life">Campus Life</option>
+                    <option value="Registrar">Registrar</option>
+                    <option value="General">General</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">Priority</label>
+                  <select
+                    value={annPriority}
+                    onChange={e => setAnnPriority(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl border border-slate-200 font-semibold bg-white"
+                  >
+                    <option value="high">High</option>
+                    <option value="medium">Medium</option>
+                    <option value="low">Low</option>
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">Announcement Body</label>
+                <textarea
+                  rows={4}
+                  value={annBody}
+                  onChange={e => setAnnBody(e.target.value)}
+                  placeholder="Detailed announcement content..."
+                  className="w-full px-3 py-2 rounded-xl border border-slate-200 font-medium"
+                  required
+                />
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setShowAnnModal(false)}
+                className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs shadow-sm"
+              >
+                Publish Broadcast
+              </button>
+            </div>
+          </form>
+        </div>
+      )}

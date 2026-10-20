@@ -1,0 +1,54 @@
+import React, { useState, useEffect } from 'react';
+import {
+  getAllUsers,
+  createUser,
+  updateUserRole,
+  deleteUser,
+  getSystemLogs,
+  getAllServiceRequests,
+  updateServiceRequestStatus,
+  getAnnouncements,
+  createAnnouncement,
+  deleteAnnouncement,
+  getSystemAnalytics,
+  getSystemSettings,
+  updateSystemSettings
+} from '../../services/serviceRequestService';
+import {
+  Shield, Users, Database, Activity, RefreshCw, AlertTriangle,
+  FileText, Megaphone, Settings, Plus, Trash2, CheckCircle2, Clock, Search, Filter, X, Send, Check
+} from 'lucide-react';
+
+function getGreeting() {
+  const h = new Date().getHours();
+  if (h < 12) return 'Good morning';
+  if (h < 17) return 'Good afternoon';
+  return 'Good evening';
+}
+
+export default function AdminDashboard({ user, onGoToChat, onGoToProfile, onGoToServices }) {
+  const [activeTab, setActiveTab] = useState('overview');
+  
+  const [usersList, setUsersList] = useState([]);
+  const [systemLogs, setSystemLogs] = useState([]);
+  const [requestsList, setRequestsList] = useState([]);
+  const [announcementsList, setAnnouncementsList] = useState([]);
+  const [analytics, setAnalytics] = useState({
+    totalUsers: 0,
+    activeUsers: 0,
+    totalRequests: 0,
+    pendingRequests: 0,
+    completedRequests: 0,
+    totalLogs: 0,
+    roleBreakdown: {},
+    requestStatusBreakdown: {},
+    requestTypeBreakdown: {},
+    systemUptime: '99.98%'
+  });
+  const [settings, setSettings] = useState({
+    maintenance_mode: false,
+    self_registration: true,
+    ai_response_mode: 'standard',
+    academic_term: 'Fall 2026',
+    notification_email: 'admin@campus.edu'
+  });

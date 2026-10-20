@@ -97,6 +97,36 @@ export async function getAllUsers() {
   return data.users || [];
 }
 
+export async function createUser(userData) {
+  const data = await apiRequest('/admin/users', {
+    method: 'POST',
+    body: JSON.stringify(userData)
+  });
+  return data.user;
+}
+
+export async function deleteUser(id) {
+  return apiRequest(`/admin/users/${id}`, { method: 'DELETE' });
+}
+
+export async function getSystemAnalytics() {
+  const data = await apiRequest('/admin/analytics');
+  return data.analytics;
+}
+
+export async function getSystemSettings() {
+  const data = await apiRequest('/admin/settings');
+  return data.settings;
+}
+
+export async function updateSystemSettings(settings) {
+  const data = await apiRequest('/admin/settings', {
+    method: 'PATCH',
+    body: JSON.stringify(settings)
+  });
+  return data.settings;
+}
+
 export async function updateUserRole(id, role) {
   const data = await apiRequest(`/admin/users/${id}/role`, {
     method: 'PATCH',

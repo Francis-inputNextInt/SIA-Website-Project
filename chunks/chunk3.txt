@@ -1,0 +1,37 @@
+  const loadData = async () => {
+    try {
+      setRefreshing(true);
+      const [usrRes, logRes, reqRes, annRes, anlyRes, setRes] = await Promise.all([
+        getAllUsers().catch(() => []),
+        getSystemLogs().catch(() => []),
+        getAllServiceRequests('All', 'All').catch(() => []),
+        getAnnouncements().catch(() => []),
+        getSystemAnalytics().catch(() => ({})),
+        getSystemSettings().catch(() => ({}))
+      ]);
+
+      if (usrRes) setUsersList(usrRes);
+      if (logRes) setSystemLogs(logRes);
+      if (reqRes) setRequestsList(reqRes);
+      if (annRes) setAnnouncementsList(annRes);
+      if (anlyRes && anlyRes.totalUsers !== undefined) setAnalytics(anlyRes);
+      if (setRes && typeof setRes === 'object') setSettings(prev => ({ ...prev, ...setRes }));
+    } catch (err) {
+      console.error('Failed to load admin data:', err);
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  useEffect(() => { loadData(); }, []);
+
+  const handleRoleChange = async (id, newRole) => {
+    try {
+      await updateUserRole(id, newRole);
+      setUsersList(prev => prev.map(u => u.id === id ? { ...u, role: newRole } : u));
+      showToast('User role updated successfully.');
+      loadData();
+    } catch (err) {
+      alert(err.message || 'Failed to update user role.');
+    }
+  };

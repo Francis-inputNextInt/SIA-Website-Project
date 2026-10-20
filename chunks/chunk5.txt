@@ -1,0 +1,46 @@
+  const handleDeleteAnnouncement = async (id) => {
+    if (!window.confirm('Delete this announcement?')) return;
+    try {
+      await deleteAnnouncement(id);
+      setAnnouncementsList(prev => prev.filter(a => a.id !== id));
+      showToast('Announcement deleted.');
+    } catch (err) {
+      alert(err.message || 'Failed to delete announcement.');
+    }
+  };
+
+  const handleUpdateRequestStatus = async (id, newStatus) => {
+    try {
+      await updateServiceRequestStatus(id, newStatus, staffNotes);
+      setRequestsList(prev => prev.map(r => r.id === id ? { ...r, status: newStatus, staff_notes: staffNotes } : r));
+      showToast(`Request status updated to ${newStatus}.`);
+      setSelectedRequest(null);
+      setStaffNotes('');
+      loadData();
+    } catch (err) {
+      alert(err.message || 'Failed to update request status.');
+    }
+  };
+
+  const handleSaveSettings = async (e) => {
+    e.preventDefault();
+    try {
+      await updateSystemSettings(settings);
+      showToast('System configuration saved successfully.');
+    } catch (err) {
+      alert(err.message || 'Failed to save settings.');
+    }
+  };
+
+  const filteredUsers = usersList.filter(u => {
+    const matchesSearch = !search || (u.full_name || '').toLowerCase().includes(search.toLowerCase()) || (u.email || '').toLowerCase().includes(search.toLowerCase());
+    const matchesRole = userRoleFilter === 'All' || u.role === userRoleFilter;
+    return matchesSearch && matchesRole;
+  });
+
+  const filteredRequests = requestsList.filter(r => {
+    const matchesSearch = !search || (r.student_name || '').toLowerCase().includes(search.toLowerCase()) || (r.title || '').toLowerCase().includes(search.toLowerCase()) || (r.student_id || '').toLowerCase().includes(search.toLowerCase());
+    const matchesStatus = requestStatusFilter === 'All' || r.status === requestStatusFilter;
+    const matchesType = requestTypeFilter === 'All' || r.service_type === requestTypeFilter;
+    return matchesSearch && matchesStatus && matchesType;
+  });
