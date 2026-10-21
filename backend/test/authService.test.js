@@ -118,6 +118,7 @@ const server = app.listen(0, async () => {
     await expectStatus('POST /api/auth/register (short name)', '/api/auth/register', 'POST', { name: 'A', email: 'test@campus.edu', password: 'secure123' }, 400);
     await expectStatus('POST /api/auth/register (short password)', '/api/auth/register', 'POST', { name: 'Test User', email: 'test@campus.edu', password: '123' }, 400);
     await expectStatus('POST /api/auth/forgot-password (bad email)', '/api/auth/forgot-password', 'POST', { email: 'bad' }, 400);
+    await expectStatus('POST /api/auth/resend-verification (bad email)', '/api/auth/resend-verification', 'POST', { email: 'bad' }, 400);
     await expectStatus('GET /api/auth/me (no token)', '/api/auth/me', 'GET', undefined, 401);
     await expectStatus('PATCH /api/profile (no token)', '/api/profile', 'PATCH', { name: 'Test' }, 401);
 

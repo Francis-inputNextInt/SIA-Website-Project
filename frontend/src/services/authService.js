@@ -246,7 +246,7 @@ export async function loginUser({ identifier, password, rememberMe = true }) {
   return data.user;
 }
 
-export async function registerUser({ name, email, role = 'Student', department = '', studentId = '', password, rememberMe = true }) {
+export async function registerUser({ name, email, role = 'Student', department = '', studentId = '', password }) {
   if (!name || name.trim().length < 2) {
     throw new Error('Please provide your full name (minimum 2 characters).');
   }
@@ -270,9 +270,42 @@ export async function registerUser({ name, email, role = 'Student', department =
     })
   });
 
-  // Email confirmation is disabled — always proceed directly to session persistence
+  return data;
+}
+
+export async function resendVerificationEmail(email) {
+  if (!email || !isValidEmail(email)) {
+    throw new Error('Please enter a valid university email address.');
+  }
+
+  const data = await request('/auth/resend-verification', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email: email.trim().toLowerCase() })
+  });
+
+  return { success: true, message: data.message || 'Verification email resent successfully.' };
+}
+
+export async function verifyEmailOtp({ email, token }) {
+  if (!email || !isValidEmail(email)) {
+    throw new Error('Please enter a valid university email address.');
+  }
+  if (!token || token.trim().length < 6) {
+    throw new Error('Please enter a valid 6-digit verification code.');
+  }
+
+  const data = await request('/auth/verify-otp', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      email: email.trim().toLowerCase(),
+      token: token.trim()
+    })
+  });
+
   await persistSupabaseSession(data.session);
-  saveUserSession(data.user, rememberMe);
+  saveUserSession(data.user, true);
   return data.user;
 }
 

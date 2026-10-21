@@ -53,6 +53,26 @@ export async function forgotPassword(req, res, next) {
   }
 }
 
+/** POST /api/auth/resend-verification */
+export async function resendVerification(req, res, next) {
+  try {
+    const result = await authService.resendVerificationEmail(req.body?.email);
+    res.json(result);
+  } catch (err) {
+    next(err);
+  }
+}
+
+/** POST /api/auth/verify-otp */
+export async function verifyOtp(req, res, next) {
+  try {
+    const result = await authService.verifyEmailOtp(req.body?.email, req.body?.token);
+    res.json(result);
+  } catch (err) {
+    next(err);
+  }
+}
+
 /** GET /api/auth/me — returns the caller's campus user. */
 export async function me(req, res, next) {
   try {

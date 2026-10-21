@@ -186,10 +186,15 @@ export async function getFacultyStudents(req, res, next) {
     console.log('[getFacultyStudents] Request received from user:', user?.email, 'role:', user?.role);
     requireRole(user, ['Faculty', 'Admin', 'Staff']);
     const supabase = requireClient();
+    if (!supabase) {
+      throw new AppError(500, 'Supabase client is not configured.');
+    }
+
     const { data, error } = await supabase.from('profiles')
       .select('id, full_name, email, student_id, year_level, department, role')
-      .ilike('role', 'student')
+      .ilike('role', 'Student')
       .order('full_name', { ascending: true });
+
     console.log('[getFacultyStudents] Supabase query result count:', data?.length, 'error:', error?.message);
     if (error) throw new AppError(400, error.message);
     res.json({ students: data || [] });

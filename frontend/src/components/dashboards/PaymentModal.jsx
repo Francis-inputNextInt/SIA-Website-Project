@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { X, Check, RefreshCw, CircleDollarSign } from 'lucide-react';
 
-export default function PaymentModal({ paymentData, students, onClose, onSave }) {
+export default function PaymentModal({ paymentData, students = [], onClose, onSave }) {
   const [form, setForm] = useState(paymentData?.id ? paymentData : {
     id: null,
     user_id: '',
@@ -77,11 +77,11 @@ export default function PaymentModal({ paymentData, students, onClose, onSave })
               {students && students.length > 0 ? (
                 students.map(s => (
                   <option key={s.id} value={s.id}>
-                    {s.full_name} {s.student_id ? `(${s.student_id})` : ''}
+                    {s.full_name} {s.student_id ? `(${s.student_id})` : s.email ? `(${s.email})` : ''}
                   </option>
                 ))
               ) : (
-                <option value="" disabled>No registered students found in database</option>
+                <option value="" disabled>No students found in database</option>
               )}
             </select>
           </div>

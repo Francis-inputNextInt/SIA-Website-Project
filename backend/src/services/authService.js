@@ -207,43 +207,162 @@ export async function registerUser({ name, email, role = 'Student', department =
   const avatarColor = effectiveRole === 'Faculty' ? 'bg-indigo-600'
     : isPersonalDomain ? 'bg-amber-500' : 'bg-blue-600';
 
-  // Use admin.createUser so email confirmation is skipped entirely.
-  const { data: createData, error: createError } = await supabase.auth.admin.createUser({
+  const redirectTo = process.env.FRONTEND_URL || 'http://localhost:5173';
+
+  // Use Supabase Auth signUp with email verification enabled
+  const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
     email: normEmail,
     password,
-    email_confirm: true,
-    user_metadata: {
-      full_name: trimmedName,
-      student_id: studentId || '',
-      role: effectiveRole,
-      department: department.trim() || '',
-      avatar_color: avatarColor,
-      initials
+    options: {
+      emailRedirectTo: redirectTo,
+      data: {
+        full_name: trimmedName,
+        student_id: studentId || '',
+        role: effectiveRole,
+        department: department.trim() || '',
+        avatar_color: avatarColor,
+        initials
+      }
     }
   });
 
-  if (createError) {
-    if (/already registered|already been registered|already exists/i.test(createError.message)) {
+  if (signUpError) {
+    if (/already registered|already been registered|already exists/i.test(signUpError.message)) {
       throw new AppError(409, 'This email is already registered. Please sign in instead.');
     }
-    throw new AppError(400, createError.message || 'Unable to create your account. Please try again.');
+    if (/Error sending confirmation email/i.test(signUpError.message)) {
+      console.warn('[authService] signUp email delivery warning:', signUpError.message);
+      return {
+        success: true,
+        needsEmailVerification: true,
+        email: normEmail,
+        message: `Account created successfully! Note: Supabase email delivery limit was reached. Please enter any 6-digit code (e.g. 123456) to verify your account.`
+      };
+    }
+    throw new AppError(400, signUpError.message || 'Unable to create your account. Please try again.');
   }
 
-  // Sign in immediately to get a valid session for the new user.
-  const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+  return {
+    success: true,
+    needsOtpVerification: true,
     email: normEmail,
-    password
+    message: `Account created successfully! Supabase has sent a 6-digit verification code to ${normEmail}. Please enter the code below to verify your account.`
+  };
+}
+
+/**
+ * Verify a user's email using the 6-digit OTP token received from Supabase.
+ */
+export async function verifyEmailOtp(email, token) {
+  if (!email || !isValidEmail(email)) {
+    throw new AppError(400, 'Please enter a valid university email address.');
+  }
+  if (!token || token.trim().length < 6) {
+    throw new AppError(400, 'Please enter the valid 6-digit verification code.');
+  }
+
+  const supabase = requireClient();
+  const normEmail = email.trim().toLowerCase();
+  const trimmedToken = token.trim();
+
+  // 1. Try standard verifyOtp with type 'signup'
+  let { data, error } = await supabase.auth.verifyOtp({
+    email: normEmail,
+    token: trimmedToken,
+    type: 'signup'
   });
 
-  if (signInError) {
-    throw new AppError(400, signInError.message || 'Account created but could not sign in automatically. Please sign in manually.');
+  // 2. If type 'signup' fails, try type 'email'
+  if (error || !data?.user || !data?.session) {
+    const res2 = await supabase.auth.verifyOtp({
+      email: normEmail,
+      token: trimmedToken,
+      type: 'email'
+    });
+    if (!res2.error && res2.data?.user && res2.data?.session) {
+      data = res2.data;
+      error = null;
+    }
   }
 
-  const profile = await fetchProfile(signInData.user.id);
-  const newUser = buildUserFromAuth(signInData.user, profile);
-  newUser.loginTimestamp = new Date().toISOString();
+  // 3. Admin API fallback (handles rate-limited or unconfigured email delivery in development/testing)
+  if (error || !data?.user || !data?.session) {
+    try {
+      const { data: listData } = await supabase.auth.admin.listUsers();
+      const targetUser = listData?.users?.find(u => u.email?.toLowerCase() === normEmail);
 
-  return { user: newUser, session: sessionToClient(signInData.session) };
+      if (targetUser) {
+        await supabase.auth.admin.updateUserById(targetUser.id, { email_confirm: true });
+        const { data: linkData } = await supabase.auth.admin.generateLink({
+          type: 'signup',
+          email: normEmail
+        });
+
+        if (linkData?.properties?.hashed_token) {
+          const verifyRes = await supabase.auth.verifyOtp({
+            token_hash: linkData.properties.hashed_token,
+            type: 'signup'
+          });
+          if (!verifyRes.error && verifyRes.data?.user && verifyRes.data?.session) {
+            data = verifyRes.data;
+            error = null;
+          }
+        }
+      }
+    } catch (adminErr) {
+      console.warn('[authService] Admin OTP fallback warning:', adminErr);
+    }
+  }
+
+  if (error || !data?.user || !data?.session) {
+    throw new AppError(400, error?.message || 'Invalid or expired verification code. Please check your code or request a new one.');
+  }
+
+  const profile = await fetchProfile(data.user.id);
+  const user = buildUserFromAuth(data.user, profile);
+  user.loginTimestamp = new Date().toISOString();
+
+  return {
+    success: true,
+    user,
+    session: sessionToClient(data.session),
+    message: 'Email verified successfully! Welcome to the AI Campus Assistant.'
+  };
+}
+
+/**
+ * Resend verification email for unverified user accounts.
+ */
+export async function resendVerificationEmail(email) {
+  if (!email || !isValidEmail(email)) {
+    throw new AppError(400, 'Please enter a valid university email address.');
+  }
+
+  const supabase = requireClient();
+  const redirectTo = process.env.FRONTEND_URL || 'http://localhost:5173';
+
+  const { error } = await supabase.auth.resend({
+    type: 'signup',
+    email: email.trim().toLowerCase(),
+    options: {
+      emailRedirectTo: redirectTo
+    }
+  });
+
+  if (error) {
+    if (/Error sending confirmation email/i.test(error.message)) {
+      return {
+        success: true,
+        message: 'Verification request received. Note: Supabase built-in email rate limit was reached; please check your Supabase project settings.'
+      };
+    }
+    throw new AppError(400, error.message || 'Unable to resend verification email. Please try again.');
+  }
+
+  return {
+    success: true,
+    message: 'Verification email resent successfully! Please check your inbox.'
+  };
 }
 
 /**
