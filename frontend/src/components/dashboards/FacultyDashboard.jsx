@@ -3,8 +3,6 @@ import {
   FACULTY_CLASSES
 } from '../../data/dashboardData';
 import {
-  getAllServiceRequests,
-  updateServiceRequestStatus,
   createAnnouncement,
   getAnnouncements,
   getMyGrades,
@@ -13,7 +11,7 @@ import {
 } from '../../services/serviceRequestService';
 import { supabase } from '../../services/supabase';
 import {
-  BookOpen, Users, Megaphone, MessageSquare, Building2, Clock, RefreshCw,
+  BookOpen, Users, Megaphone, Building2, Clock, RefreshCw,
   CheckCircle2, AlertCircle, X, Send, ChevronRight, FileText, Check, ShieldCheck, Award, Edit3
 } from 'lucide-react';
 import GradeModal from './GradeModal';
@@ -121,111 +119,7 @@ function ClassDetailModal({ cls, onClose }) {
   );
 }
 
-function InquiryDetailModal({ inquiry, onClose, onUpdateStatus }) {
-  const [remarks, setRemarks] = useState('');
-  const [saving, setSaving] = useState(false);
-
-  useEffect(() => {
-    if (inquiry) {
-      setRemarks(inquiry.remarks || '');
-    }
-  }, [inquiry]);
-
-  if (!inquiry) return null;
-
-  const handleSaveResponse = async (newStatus) => {
-    setSaving(true);
-    try {
-      await onUpdateStatus(inquiry.id, newStatus, remarks);
-    } finally {
-      setSaving(false);
-      onClose();
-    }
-  };
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-      <div className="bg-white rounded-2xl max-w-xl w-full p-6 shadow-2xl border border-slate-200 space-y-5 max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-          <div>
-            <span className="text-[11px] font-bold text-blue-600 uppercase tracking-wider">Consultation Request</span>
-            <h2 className="text-lg font-extrabold text-slate-900 mt-0.5">{inquiry.subject}</h2>
-          </div>
-          <button onClick={onClose} className="p-2 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors">
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-
-        <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 flex items-center justify-between">
-          <div>
-            <div className="text-xs font-bold text-slate-900">{inquiry.student}</div>
-            <div className="text-[11px] font-mono text-slate-500">Student ID: {inquiry.studentId || 'S-2024-8891'}</div>
-          </div>
-          <div className="text-right">
-            <div className="text-[11px] text-slate-400">Submitted On</div>
-            <div className="text-xs font-semibold text-slate-700">{inquiry.date}</div>
-          </div>
-        </div>
-
-        <div className="space-y-1.5">
-          <label className="block text-xs font-bold text-slate-700 uppercase">Student Message / Inquiry</label>
-          <div className="p-3.5 rounded-xl bg-blue-50/50 border border-blue-100 text-xs text-slate-700 leading-relaxed">
-            {inquiry.details || 'Requesting consultation regarding advanced data structures project requirements, algorithm complexity analysis, and midterm grade review.'}
-          </div>
-        </div>
-
-        <div className="space-y-1.5">
-          <label className="block text-xs font-bold text-slate-700 uppercase">Faculty Remarks & Response Notes</label>
-          <textarea
-            rows={3}
-            value={remarks}
-            onChange={e => setRemarks(e.target.value)}
-            placeholder="Type your response remarks, appointment confirmation, or feedback for the student..."
-            className="w-full p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
-
-        <div className="flex flex-wrap items-center justify-between gap-2 pt-3 border-t border-slate-100">
-          <div className="flex items-center gap-1.5">
-            <span className="text-xs font-bold text-slate-500">Current Status:</span>
-            <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
-              inquiry.status === 'Pending' ? 'bg-amber-100 text-amber-800' :
-              inquiry.status === 'In Review' ? 'bg-blue-100 text-blue-800' :
-              inquiry.status === 'Approved' ? 'bg-emerald-100 text-emerald-800' :
-              'bg-slate-100 text-slate-800'
-            }`}>
-              {inquiry.status}
-            </span>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              disabled={saving}
-              onClick={() => handleSaveResponse('In Review')}
-              className="px-3 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-xl text-xs font-semibold transition-colors"
-            >
-              Mark In Review
-            </button>
-            <button
-              type="button"
-              disabled={saving}
-              onClick={() => handleSaveResponse('Approved')}
-              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-sm transition-colors flex items-center gap-1.5"
-            >
-              <Check className="w-3.5 h-3.5" />
-              Approve & Respond
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 export default function FacultyDashboard({ user, onGoToChat, onGoToProfile, onGoToServices }) {
-  const [inquiries, setInquiries] = useState([]);
-  const [filter, setFilter] = useState('All');
   const [announcements, setAnnouncements] = useState([]);
   const [grades, setGrades] = useState([]);
   const [students, setStudents] = useState([]);
@@ -235,33 +129,20 @@ export default function FacultyDashboard({ user, onGoToChat, onGoToProfile, onGo
   const [newTitle, setNewTitle] = useState('');
   const [newBody, setNewBody] = useState('');
   const [selectedClass, setSelectedClass] = useState(null);
-  const [selectedInquiry, setSelectedInquiry] = useState(null);
 
   const loadData = async () => {
     try {
       setRefreshing(true);
-      const [reqs, anns, grds, stds] = await Promise.all([
-        getAllServiceRequests().catch(() => []),
+      const [anns, grds, stds] = await Promise.all([
         getAnnouncements().catch(() => []),
         getMyGrades().catch(() => []),
         getFacultyStudents().catch(() => [])
       ]);
-      setInquiries((reqs || []).map(r => ({
-        id: r.id,
-        student: r.student_name || 'Student',
-        studentId: r.student_id || 'S-2024-001',
-        subject: r.title || r.service_type,
-        date: r.created_at ? new Date(r.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Recent',
-        status: r.status,
-        details: r.details,
-        remarks: r.remarks || r.staff_notes || r.response_notes
-      })));
       setAnnouncements(anns || []);
       setGrades(grds || []);
       setStudents(stds || []);
     } catch (err) {
       console.error('Failed to load faculty dashboard data:', err);
-      setInquiries([]);
       setAnnouncements([]);
       setGrades([]);
       setStudents([]);
@@ -278,9 +159,6 @@ export default function FacultyDashboard({ user, onGoToChat, onGoToProfile, onGo
       subscription = supabase
         .channel('faculty-dashboard-db-changes')
         .on('postgres_changes', { event: '*', schema: 'public', table: 'announcements' }, () => {
-          loadData();
-        })
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'service_requests' }, () => {
           loadData();
         })
         .on('postgres_changes', { event: '*', schema: 'public', table: 'grades' }, () => {
@@ -306,16 +184,6 @@ export default function FacultyDashboard({ user, onGoToChat, onGoToProfile, onGo
     }
   };
 
-  const handleUpdateStatus = async (id, newStatus, remarksText = '') => {
-    try {
-      await updateServiceRequestStatus(id, newStatus, remarksText);
-      await loadData();
-    } catch (e) {
-      alert(e.message || 'Failed to update request status in database.');
-      throw e;
-    }
-  };
-
   const handlePostAnnouncement = async (e) => {
     e.preventDefault();
     if (!newTitle.trim() || !newBody.trim()) return;
@@ -336,8 +204,6 @@ export default function FacultyDashboard({ user, onGoToChat, onGoToProfile, onGo
     }
   };
 
-  const filteredInquiries = filter === 'All' ? inquiries : inquiries.filter(i => i.status === filter);
-
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6">
       <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-indigo-600 via-violet-600 to-indigo-700 p-6 sm:p-8 text-white shadow-lg">
@@ -348,7 +214,7 @@ export default function FacultyDashboard({ user, onGoToChat, onGoToProfile, onGo
               {getGreeting()}, {user?.name || 'Dr. Eleanor Vance'}
             </h1>
             <p className="text-indigo-100 text-sm mt-1">
-              {user?.department || 'Department of Computer Science'} · Faculty Portal & Consultation Queue
+              {user?.department || 'Department of Computer Science'} · Faculty Portal & Department Hub
             </p>
           </div>
           <div className="flex items-center gap-2.5">
@@ -373,22 +239,18 @@ export default function FacultyDashboard({ user, onGoToChat, onGoToProfile, onGo
         </div>
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm">
           <p className="text-xs font-bold text-slate-400 uppercase">Assigned Classes</p>
           <p className="text-2xl font-extrabold text-indigo-600 mt-1">{FACULTY_CLASSES.length}</p>
         </div>
         <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm">
-          <p className="text-xs font-bold text-slate-400 uppercase">Student Inquiries</p>
-          <p className="text-2xl font-extrabold text-blue-600 mt-1">{inquiries.length}</p>
-        </div>
-        <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm">
-          <p className="text-xs font-bold text-slate-400 uppercase">Pending Tasks</p>
-          <p className="text-2xl font-extrabold text-amber-600 mt-1">{inquiries.filter(i => i.status === 'Pending').length}</p>
+          <p className="text-xs font-bold text-slate-400 uppercase">Encoded Grades</p>
+          <p className="text-2xl font-extrabold text-emerald-600 mt-1">{grades.length}</p>
         </div>
         <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm">
           <p className="text-xs font-bold text-slate-400 uppercase">Dept. Announcements</p>
-          <p className="text-2xl font-extrabold text-emerald-600 mt-1">{announcements.length}</p>
+          <p className="text-2xl font-extrabold text-blue-600 mt-1">{announcements.length}</p>
         </div>
       </div>
 
@@ -520,99 +382,7 @@ export default function FacultyDashboard({ user, onGoToChat, onGoToProfile, onGo
         </div>
       </div>
 
-      <div id="faculty-inquiries-section" className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-sm space-y-4">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-          <div className="flex items-center gap-2">
-            <div className="p-1.5 rounded-lg bg-blue-100">
-              <MessageSquare className="w-4 h-4 text-blue-600" />
-            </div>
-            <div>
-              <h2 className="text-base font-bold text-slate-900">Student Inquiries & Consultation Queue</h2>
-              <p className="text-xs text-slate-500">Click any row to view full student details, respond, or update request status.</p>
-            </div>
-          </div>
-          <div className="flex gap-1 bg-slate-100 p-1 rounded-xl text-xs font-semibold">
-            {['All', 'Pending', 'In Review', 'Approved'].map(tab => (
-              <button
-                key={tab}
-                onClick={() => setFilter(tab)}
-                className={`px-3 py-1.5 rounded-lg transition-all ${filter === tab ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}
-              >
-                {tab}
-              </button>
-            ))}
-          </div>
-        </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="border-b border-slate-100 text-[11px] font-bold uppercase text-slate-400">
-                <th className="py-3 px-3">Student</th>
-                <th className="py-3 px-3">Inquiry / Subject</th>
-                <th className="py-3 px-3">Date</th>
-                <th className="py-3 px-3">Status</th>
-                <th className="py-3 px-3 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 text-slate-700">
-              {filteredInquiries.length === 0 ? (
-                <tr>
-                  <td colSpan={5} className="py-8 text-center text-xs text-slate-400">
-                    No student inquiries found for filter "{filter}".
-                  </td>
-                </tr>
-              ) : (
-                filteredInquiries.map(inq => (
-                  <tr
-                    key={inq.id}
-                    onClick={() => setSelectedInquiry(inq)}
-                    className="hover:bg-slate-50 cursor-pointer transition-colors group"
-                  >
-                    <td className="py-3 px-3">
-                      <div className="font-bold text-slate-900 group-hover:text-blue-600 transition-colors">{inq.student}</div>
-                      <div className="text-[10px] font-mono text-slate-400">{inq.studentId}</div>
-                    </td>
-                    <td className="py-3 px-3 font-medium text-slate-800">{inq.subject}</td>
-                    <td className="py-3 px-3 text-slate-500 text-xs">{inq.date}</td>
-                    <td className="py-3 px-3">
-                      <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
-                        inq.status === 'Pending' ? 'bg-amber-100 text-amber-800' :
-                        inq.status === 'In Review' ? 'bg-blue-100 text-blue-800' :
-                        inq.status === 'Approved' ? 'bg-emerald-100 text-emerald-800' :
-                        'bg-slate-100 text-slate-800'
-                      }`}>
-                        {inq.status}
-                      </span>
-                    </td>
-                    <td className="py-3 px-3 text-right space-x-1.5" onClick={e => e.stopPropagation()}>
-                      {inq.status === 'Pending' && (
-                        <button
-                          onClick={() => handleUpdateStatus(inq.id, 'In Review')}
-                          className="px-2.5 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-[11px] font-semibold transition-colors"
-                        >
-                          Review
-                        </button>
-                      )}
-                      {inq.status !== 'Approved' && (
-                        <button
-                          onClick={() => handleUpdateStatus(inq.id, 'Approved')}
-                          className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-[11px] font-semibold transition-colors"
-                        >
-                          Approve
-                        </button>
-                      )}
-                      {inq.status === 'Approved' && (
-                        <span className="text-emerald-600 font-bold text-[11px]">Approved ✓</span>
-                      )}
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
 
       <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-sm space-y-4">
         <div className="flex items-center justify-between">
@@ -695,11 +465,6 @@ export default function FacultyDashboard({ user, onGoToChat, onGoToProfile, onGo
       )}
 
       <ClassDetailModal cls={selectedClass} onClose={() => setSelectedClass(null)} />
-      <InquiryDetailModal
-        inquiry={selectedInquiry}
-        onClose={() => setSelectedInquiry(null)}
-        onUpdateStatus={handleUpdateStatus}
-      />
       {gradeModalData !== null && (
         <GradeModal
           gradeData={gradeModalData}
