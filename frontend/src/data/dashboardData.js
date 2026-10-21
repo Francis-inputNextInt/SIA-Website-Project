@@ -204,3 +204,183 @@ export const FACULTY_ANNOUNCEMENTS = [
   { id: 'f-ann-2', title: 'Midterm Grade Submission Deadline', body: 'Please submit all midterm grades into the faculty portal by Friday, October 24 at 5:00 PM.', date: 'Oct 17, 2026', category: 'Registrar' },
 ];
 
+export const ACADEMIC_CALENDAR_EVENTS = [
+  {
+    id: 'cal-1',
+    title: 'First Semester Enrollment Period',
+    description: 'Online and onsite course registration, fee assessment, and validation for all students.',
+    date: 'August 1 – 15, 2026',
+    category: 'Registration',
+    term: '1st Semester',
+    location: 'Registrar Portal / Campus Gym',
+    urgent: false,
+  },
+  {
+    id: 'cal-2',
+    title: 'Opening of Classes (First Day)',
+    description: 'Start of regular instruction for the First Semester of Academic Year 2026–2027.',
+    date: 'August 24, 2026',
+    category: 'Academic',
+    term: '1st Semester',
+    location: 'All Respective Classrooms & Labs',
+    urgent: true,
+  },
+  {
+    id: 'cal-3',
+    title: 'Last Day for Adding/Dropping Subjects',
+    description: 'Deadline for subject adjustments, section changes, and official dropping without penalty.',
+    date: 'September 4, 2026',
+    category: 'Registration',
+    term: '1st Semester',
+    location: 'Registrar Office',
+    urgent: false,
+  },
+  {
+    id: 'cal-4',
+    title: 'Midterm Examinations Week',
+    description: 'Midterm assessments across all degree programs and departments.',
+    date: 'September 18 – 25, 2026',
+    category: 'Examinations',
+    term: '1st Semester',
+    location: 'Examination Halls',
+    urgent: true,
+  },
+  {
+    id: 'cal-5',
+    title: 'Midterm Grade Submission Deadline',
+    description: 'Deadline for all instructors to encode and submit midterm grades.',
+    date: 'October 5, 2026',
+    category: 'Academic',
+    term: '1st Semester',
+    location: 'Faculty Portal',
+    urgent: false,
+  },
+  {
+    id: 'cal-6',
+    title: 'Final Examinations Week (First Semester)',
+    description: 'Comprehensive final examinations for all first-semester courses.',
+    date: 'December 14 – 18, 2026',
+    category: 'Examinations',
+    term: '1st Semester',
+    location: 'Examination Halls',
+    urgent: true,
+  },
+  {
+    id: 'cal-7',
+    title: 'Second Semester Enrollment & Opening',
+    description: 'Enrollment and start of classes for the Second Semester of AY 2026–2027.',
+    date: 'January 11 – 25, 2027',
+    category: 'Registration',
+    term: '2nd Semester',
+    location: 'Registrar Portal & Classrooms',
+    urgent: true,
+  },
+  {
+    id: 'cal-8',
+    title: 'Commencement Exercises (Graduation)',
+    description: 'Annual Commencement Exercises for the graduating class of AY 2026–2027.',
+    date: 'June 10 – 12, 2027',
+    category: 'Academic',
+    term: 'Summer',
+    location: 'University Grand Coliseum',
+    urgent: true,
+  },
+];
+
+export const MOCK_GRADES = [
+  {
+    id: 'g-1',
+    subject_code: 'CS 301',
+    subject_title: 'Data Structures & Algorithms',
+    units: 3.0,
+    grade: 1.25,
+    letter_grade: 'A',
+    grading_period: 'Midterm',
+    semester: '1st Semester',
+    academic_year: '2026–2027',
+    faculty_name: 'Dr. Eleanor Vance',
+  },
+  {
+    id: 'g-2',
+    subject_code: 'CS 302',
+    subject_title: 'Operating Systems',
+    units: 3.0,
+    grade: 1.50,
+    letter_grade: 'A-',
+    grading_period: 'Midterm',
+    semester: '1st Semester',
+    academic_year: '2026–2027',
+    faculty_name: 'Prof. Michael Torres',
+  },
+  {
+    id: 'g-3',
+    subject_code: 'ENG 201',
+    subject_title: 'Technical Writing',
+    units: 3.0,
+    grade: 1.75,
+    letter_grade: 'B+',
+    grading_period: 'Midterm',
+    semester: '1st Semester',
+    academic_year: '2026–2027',
+    faculty_name: 'Ms. Sarah Lin',
+  },
+  {
+    id: 'g-4',
+    subject_code: 'MATH 210',
+    subject_title: 'Discrete Mathematics',
+    units: 3.0,
+    grade: 1.25,
+    letter_grade: 'A',
+    grading_period: 'Midterm',
+    semester: '1st Semester',
+    academic_year: '2026–2027',
+    faculty_name: 'Dr. Rachel Kim',
+  },
+];
+
+export const MOCK_PAYMENTS = [
+  {
+    id: 'pay-1',
+    fee_type: 'Tuition Fee (1st Semester)',
+    total_amount: 35000.00,
+    amount_paid: 25000.00,
+    remaining_balance: 10000.00,
+    due_date: '2026-11-15',
+    status: 'Partial',
+    academic_year: '2026–2027',
+    semester: '1st Semester',
+    payment_history: [
+      { date: 'Aug 10, 2026', amount: 15000.00, reference_no: 'OR-994821', channel: 'Online Banking (BPI)' },
+      { date: 'Sep 05, 2026', amount: 10000.00, reference_no: 'OR-998123', channel: 'Campus Cashier' }
+    ]
+  },
+  {
+    id: 'pay-2',
+    fee_type: 'Laboratory & Computer Lab Fee',
+    total_amount: 5500.00,
+    amount_paid: 5500.00,
+    remaining_balance: 0.00,
+    due_date: '2026-09-01',
+    status: 'Paid',
+    academic_year: '2026–2027',
+    semester: '1st Semester',
+    payment_history: [
+      { date: 'Aug 12, 2026', amount: 5500.00, reference_no: 'OR-995012', channel: 'GCash Gateway' }
+    ]
+  },
+  {
+    id: 'pay-3',
+    fee_type: 'Library & Miscellaneous Fee',
+    total_amount: 3200.00,
+    amount_paid: 0.00,
+    remaining_balance: 3200.00,
+    due_date: '2026-12-01',
+    status: 'Pending',
+    academic_year: '2026–2027',
+    semester: '1st Semester',
+    payment_history: []
+  }
+];
+
+
+

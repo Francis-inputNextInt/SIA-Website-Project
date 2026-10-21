@@ -19,7 +19,12 @@ import {
   getSystemLogs,
   getSystemSettings,
   updateSystemSettings,
-  getSystemAnalytics
+  getSystemAnalytics,
+  getGrades,
+  createOrUpdateGrade,
+  getPayments,
+  createOrUpdatePayment,
+  getFacultyStudents
 } from '../controllers/serviceRequestController.js';
 
 const router = Router();
@@ -32,6 +37,13 @@ router.get('/service-requests/stats', getRequestStats);
 // Staff/Faculty endpoints
 router.get('/service-requests', getAllRequests);
 router.patch('/service-requests/:id/status', updateRequestStatus);
+router.get('/faculty/students', getFacultyStudents);
+
+// Grades & Payments
+router.get('/grades', getGrades);
+router.post('/grades', createOrUpdateGrade);
+router.get('/payments', getPayments);
+router.post('/payments', createOrUpdatePayment);
 
 // Announcements
 router.get('/announcements', getAnnouncements);
@@ -49,3 +61,4 @@ router.get('/admin/settings', getSystemSettings);
 router.patch('/admin/settings', updateSystemSettings);
 
 export default router;
+

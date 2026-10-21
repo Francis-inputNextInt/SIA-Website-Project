@@ -10,6 +10,7 @@ import LoginPage from './components/LoginPage';
 import ProfilePage from './components/ProfilePage';
 import DashboardPage from './components/DashboardPage';
 import StudentServicesPage from './components/StudentServicesPage';
+import AcademicCalendarPage from './components/AcademicCalendarPage';
 import Toast from './components/Toast';
 import { INITIAL_ASSISTANT_MESSAGE } from './data/mockResponses';
 import { sendChatMessage } from './services/chatService';
@@ -143,6 +144,9 @@ export default function App() {
   // Navigate to Student Services
   const handleGoToServices = useCallback(() => setView('services'), []);
 
+  // Navigate to Academic Calendar
+  const handleGoToCalendar = useCallback(() => setView('calendar'), []);
+
   // Toggle sidebar
   const handleToggleSidebar = useCallback(() => setSidebarOpen((prev) => !prev), []);
   const handleCloseSidebar = useCallback(() => setSidebarOpen(false), []);
@@ -160,6 +164,7 @@ export default function App() {
         onGoToDashboard={handleGoToDashboard}
         onGoToChat={handleGoToChat}
         onGoToServices={handleGoToServices}
+        onGoToCalendar={handleGoToCalendar}
         onNewConversation={handleNewConversation}
         isResetting={isResetting}
         user={currentUser}
@@ -177,6 +182,7 @@ export default function App() {
         onGoToDashboard={handleGoToDashboard}
         onGoToChat={handleGoToChat}
         onGoToServices={handleGoToServices}
+        onGoToCalendar={handleGoToCalendar}
         user={currentUser}
       />
 
@@ -189,10 +195,18 @@ export default function App() {
           onGoToChat={handleGoToChat}
           onGoToProfile={handleOpenProfile}
           onGoToServices={handleGoToServices}
+          onGoToCalendar={handleGoToCalendar}
         />
       ) : view === 'services' ? (
         <StudentServicesPage
           user={currentUser}
+          showToast={showToast}
+          onBack={handleGoToDashboard}
+        />
+      ) : view === 'calendar' ? (
+        <AcademicCalendarPage
+          user={currentUser}
+          onBack={handleGoToDashboard}
           showToast={showToast}
         />
       ) : view === 'profile' ? (

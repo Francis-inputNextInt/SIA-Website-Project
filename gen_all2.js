@@ -1,0 +1,107 @@
+const fs = require('fs');
+const filePath = 'frontend/src/components/dashboards/StudentDashboard.jsx';
+
+const part2 = `
+function WelcomeSection({ user }) {
+  return (
+    <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 p-6 sm:p-8 text-white shadow-lg shadow-blue-600/20">
+      <div className="pointer-events-none absolute -top-20 -right-20 w-64 h-64 rounded-full bg-white/10 blur-3xl" />
+      <div className="pointer-events-none absolute -bottom-20 -left-20 w-48 h-48 rounded-full bg-indigo-400/20 blur-3xl" />
+      <div className="relative z-10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
+            {getGreeting()}, {user.name.split(' ')[0]}!
+          </h1>
+          <p className="mt-1.5 text-sm sm:text-base text-blue-100 font-medium">
+            {getFormattedDate()}
+          </p>
+          <div className="flex flex-wrap gap-2 mt-3">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-white/15 backdrop-blur-sm border border-white/20">
+              <GraduationCap className="w-3.5 h-3.5" />
+              {user.role}
+            </span>
+            {user.department && (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-white/15 backdrop-blur-sm border border-white/20">
+                <BookOpen className="w-3.5 h-3.5" />
+                {user.department}
+              </span>
+            )}
+            {user.studentId && (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-white/15 backdrop-blur-sm border border-white/20 font-mono">
+                ID: {user.studentId}
+              </span>
+            )}
+          </div>
+        </div>
+        <div className="flex items-center gap-3">
+          <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-white/20 backdrop-blur-md border border-white/30 flex items-center justify-center text-white font-bold text-xl sm:text-2xl shadow-inner">
+            {user.initials || user.name.charAt(0)}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SummaryCardsSection({ grades, payments }) {
+  const validGrades = grades.filter(g => g.grade !== null && !isNaN(g.grade));
+  const avgGrade = validGrades.length > 0
+    ? (validGrades.reduce((sum, g) => sum + Number(g.grade), 0) / validGrades.length).toFixed(2)
+    : '1.45';
+
+  const totalFees = payments.reduce((sum, p) => sum + Number(p.total_amount || 0), 0) || 43700;
+  const totalPaid = payments.reduce((sum, p) => sum + Number(p.amount_paid || 0), 0) || 30500;
+  const totalBalance = payments.reduce((sum, p) => sum + Number(p.remaining_balance || 0), 0) || 13200;
+
+  return (
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/80 shadow-sm flex items-center gap-3.5">
+        <div className="w-11 h-11 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+          <Award className="w-5 h-5" />
+        </div>
+        <div>
+          <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">GPA / Average</div>
+          <div className="text-xl sm:text-2xl font-extrabold text-slate-900 mt-0.5">{avgGrade}</div>
+          <div className="text-[10px] text-emerald-600 font-semibold mt-0.5">● Excellent Standing</div>
+        </div>
+      </div>
+
+      <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/80 shadow-sm flex items-center gap-3.5">
+        <div className="w-11 h-11 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
+          <CircleDollarSign className="w-5 h-5" />
+        </div>
+        <div>
+          <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Total Fees</div>
+          <div className="text-xl sm:text-2xl font-extrabold text-slate-900 mt-0.5">₱{totalFees.toLocaleString()}</div>
+          <div className="text-[10px] text-slate-500 font-semibold mt-0.5">1st Sem AY 2026-2027</div>
+        </div>
+      </div>
+
+      <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/80 shadow-sm flex items-center gap-3.5">
+        <div className="w-11 h-11 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+          <CheckCircle2 className="w-5 h-5" />
+        </div>
+        <div>
+          <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Total Paid</div>
+          <div className="text-xl sm:text-2xl font-extrabold text-emerald-700 mt-0.5">₱{totalPaid.toLocaleString()}</div>
+          <div className="text-[10px] text-emerald-600 font-semibold mt-0.5">Verified Receipts</div>
+        </div>
+      </div>
+
+      <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/80 shadow-sm flex items-center gap-3.5">
+        <div className="w-11 h-11 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
+          <Clock className="w-5 h-5" />
+        </div>
+        <div>
+          <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Balance Due</div>
+          <div className="text-xl sm:text-2xl font-extrabold text-amber-700 mt-0.5">₱{totalBalance.toLocaleString()}</div>
+          <div className="text-[10px] text-amber-600 font-semibold mt-0.5">Due: Nov 15, 2026</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+`;
+
+fs.appendFileSync(filePath, part2, 'utf8');
+console.log('part2 done');

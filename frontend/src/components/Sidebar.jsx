@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react';
-import { Home, MessageSquare, Building2, X, GraduationCap } from 'lucide-react';
+import { Home, MessageSquare, Building2, CalendarDays, X, GraduationCap } from 'lucide-react';
 
-export default function Sidebar({ isOpen, onClose, view, onGoToDashboard, onGoToChat, onGoToServices, user }) {
+export default function Sidebar({ isOpen, onClose, view, onGoToDashboard, onGoToChat, onGoToServices, onGoToCalendar, user }) {
   const sidebarRef = useRef(null);
 
   // Close when clicking outside on mobile
@@ -107,6 +107,18 @@ export default function Sidebar({ isOpen, onClose, view, onGoToDashboard, onGoTo
           >
             <Building2 className="w-4.5 h-4.5" />
             Student Services
+          </button>
+          <button
+            type="button"
+            onClick={() => { onGoToCalendar(); onClose(); }}
+            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all duration-150 ${
+              view === 'calendar'
+                ? 'bg-blue-50 text-blue-700 border border-blue-200/60 shadow-sm'
+                : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900 border border-transparent'
+            }`}
+          >
+            <CalendarDays className="w-4.5 h-4.5" />
+            Academic Calendar
           </button>
         </nav>
 

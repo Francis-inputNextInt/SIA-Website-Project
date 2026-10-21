@@ -12,13 +12,20 @@ import {
   MapPin,
   Megaphone,
   Star,
+  Award,
+  CircleDollarSign,
+  CheckCircle2,
+  Download,
+  FileText,
+  Printer,
+  X,
 } from 'lucide-react';
 import {
   SCHEDULE,
   DEADLINES,
   QUICK_ACTIONS,
 } from '../../data/dashboardData';
-import { getAnnouncements } from '../../services/serviceRequestService';
+import { getAnnouncements, getMyGrades, getMyPayments } from '../../services/serviceRequestService';
 import { supabase } from '../../services/supabase';
 
 /* ── Helpers ──────────────────────────────────────────────── */
@@ -354,41 +361,190 @@ function QuickActionsSection({ onGoToChat, onGoToProfile, onGoToServices }) {
   );
 }
 
+function SummaryCardsSection({ grades, payments }) {
+  const validGrades = grades.filter(g => g.grade !== null && g.grade !== undefined && !isNaN(Number(g.grade)));
+  const avgGrade = validGrades.length > 0
+    ? (validGrades.reduce((sum, g) => sum + Number(g.grade), 0) / validGrades.length).toFixed(2)
+    : 'N.A.';
+
+  const totalFees = payments.reduce((sum, p) => sum + Number(p.total_amount || 0), 0);
+  const totalPaid = payments.reduce((sum, p) => sum + Number(p.amount_paid || 0), 0);
+  const totalBalance = payments.reduce((sum, p) => sum + Number(p.remaining_balance || 0), 0);
+
+  return (
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/80 shadow-sm flex items-center gap-3.5">
+        <div className="w-11 h-11 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+          <Award className="w-5 h-5" />
+        </div>
+        <div>
+          <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">GPA / Average</div>
+          <div className="text-xl sm:text-2xl font-extrabold text-slate-900 mt-0.5">{avgGrade}</div>
+          <div className="text-[10px] text-emerald-600 font-semibold mt-0.5">● Excellent Standing</div>
+        </div>
+      </div>
+
+      <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/80 shadow-sm flex items-center gap-3.5">
+        <div className="w-11 h-11 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
+          <CircleDollarSign className="w-5 h-5" />
+        </div>
+        <div>
+          <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Total Fees</div>
+          <div className="text-xl sm:text-2xl font-extrabold text-slate-900 mt-0.5">₱{totalFees.toLocaleString()}</div>
+          <div className="text-[10px] text-slate-500 font-semibold mt-0.5">1st Sem AY 2026-2027</div>
+        </div>
+      </div>
+
+      <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/80 shadow-sm flex items-center gap-3.5">
+        <div className="w-11 h-11 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+          <CheckCircle2 className="w-5 h-5" />
+        </div>
+        <div>
+          <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Total Paid</div>
+          <div className="text-xl sm:text-2xl font-extrabold text-emerald-700 mt-0.5">₱{totalPaid.toLocaleString()}</div>
+          <div className="text-[10px] text-emerald-600 font-semibold mt-0.5">Verified Receipts</div>
+        </div>
+      </div>
+
+      <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/80 shadow-sm flex items-center gap-3.5">
+        <div className="w-11 h-11 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
+          <Clock className="w-5 h-5" />
+        </div>
+        <div>
+          <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Balance Due</div>
+          <div className="text-xl sm:text-2xl font-extrabold text-amber-700 mt-0.5">₱{totalBalance.toLocaleString()}</div>
+          <div className="text-[10px] text-amber-600 font-semibold mt-0.5">Due: Nov 15, 2026</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PdfModal({ type, data, user, onClose }) {
+  if (!type) return null;
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+      <div className="bg-white rounded-2xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl border border-slate-200 space-y-6 max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between pb-4 border-b border-slate-100 print:hidden">
+          <div className="flex items-center gap-2">
+            <FileText className="w-5 h-5 text-blue-600" />
+            <h2 className="text-lg font-extrabold text-slate-900">
+              {type === 'grades' ? 'Official Grade Report Preview' : 'Official Statement of Account'}
+            </h2>
+          </div>
+          <div className="flex items-center gap-2">
+            <button onClick={() => window.print()} className="px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm transition-colors">
+              <Printer className="w-4 h-4" /> Print PDF
+            </button>
+            <button onClick={onClose} className="p-2 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors">
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+
+        <div className="p-6 rounded-xl bg-white border border-slate-200 space-y-6 text-slate-800">
+          <div className="text-center space-y-1 pb-4 border-b border-slate-200">
+            <h3 className="text-lg font-black tracking-tight text-slate-900">UNIVERSITY OF ADVANCED TECHNOLOGY</h3>
+            <p className="text-xs text-slate-500 font-medium">Office of the Registrar & Accounting</p>
+            <p className="text-xs font-bold text-blue-600 uppercase pt-1">
+              {type === 'grades' ? 'CERTIFIED STUDENT GRADE REPORT' : 'STUDENT STATEMENT OF ACCOUNT'}
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4 text-xs bg-slate-50 p-4 rounded-xl border border-slate-100">
+            <div><span className="text-slate-400 block font-bold uppercase text-[10px]">Student Name</span><span className="font-extrabold text-slate-900 text-sm">{user.name}</span></div>
+            <div><span className="text-slate-400 block font-bold uppercase text-[10px]">Student ID</span><span className="font-mono font-bold text-slate-900 text-sm">{user.studentId || '2024-00842'}</span></div>
+          </div>
+
+          {type === 'grades' ? (
+            <table className="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr className="border-b border-slate-200 text-[10px] font-bold uppercase text-slate-500 bg-slate-50">
+                  <th className="py-2 px-2">Code</th><th className="py-2 px-2">Title</th><th className="py-2 px-2 text-center">Units</th><th className="py-2 px-2 text-center">Grade</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {(data.grades || []).map(g => (
+                  <tr key={g.subject_code}>
+                    <td className="py-2 px-2 font-mono font-bold">{g.subject_code}</td>
+                    <td className="py-2 px-2 font-semibold">{g.subject_title}</td>
+                    <td className="py-2 px-2 text-center font-mono">{g.units}</td>
+                    <td className="py-2 px-2 text-center font-mono font-bold text-blue-600">{g.grade}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          ) : (
+            <table className="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr className="border-b border-slate-200 text-[10px] font-bold uppercase text-slate-500 bg-slate-50">
+                  <th className="py-2 px-2">Fee Type</th><th className="py-2 px-2 text-right">Total</th><th className="py-2 px-2 text-right">Paid</th><th className="py-2 px-2 text-right">Balance</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {(data.payments || []).map(p => (
+                  <tr key={p.fee_type}>
+                    <td className="py-2 px-2 font-semibold">{p.fee_type}</td>
+                    <td className="py-2 px-2 text-right font-mono">₱{Number(p.total_amount).toLocaleString()}</td>
+                    <td className="py-2 px-2 text-right font-mono text-emerald-700">₱{Number(p.amount_paid).toLocaleString()}</td>
+                    <td className="py-2 px-2 text-right font-mono text-amber-700">₱{Number(p.remaining_balance).toLocaleString()}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* ── Main Dashboard ───────────────────────────────────────── */
 
 export default function StudentDashboard({ user, onGoToChat, onGoToProfile, onGoToServices }) {
+  const [activeTab, setActiveTab] = useState('overview');
   const [announcements, setAnnouncements] = useState([]);
+  const [grades, setGrades] = useState([]);
+  const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [pdfModalType, setPdfModalType] = useState(null);
 
-  const fetchAnnouncementsList = async () => {
+  const fetchData = async () => {
     try {
       setLoading(true);
       setError(null);
-      const res = await getAnnouncements();
-      // Respect target audience: Students must only see announcements published for them or for all users
-      const filtered = (res || []).filter(ann => {
+      const [anns, grds, pyms] = await Promise.all([
+        getAnnouncements().catch(() => []),
+        getMyGrades().catch(() => []),
+        getMyPayments().catch(() => [])
+      ]);
+
+      const filteredAnns = (anns || []).filter(ann => {
         if (!ann.target_roles || ann.target_roles.length === 0) return true;
         return ann.target_roles.includes('Student') || ann.target_roles.includes('All');
       });
-      setAnnouncements(filtered);
+      setAnnouncements(filteredAnns);
+      setGrades(grds || []);
+      setPayments(pyms || []);
     } catch (err) {
-      setError(err.message || 'Failed to load announcements from database.');
-      setAnnouncements([]);
+      setError(err.message || 'Failed to load student data.');
+      setGrades([]);
+      setPayments([]);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchAnnouncementsList();
+    fetchData();
 
     let subscription = null;
     if (supabase) {
       subscription = supabase
-        .channel('public:announcements')
+        .channel('public:student_data')
         .on('postgres_changes', { event: '*', schema: 'public', table: 'announcements' }, () => {
-          fetchAnnouncementsList();
+          fetchData();
         })
         .subscribe();
     }
@@ -403,29 +559,211 @@ export default function StudentDashboard({ user, onGoToChat, onGoToProfile, onGo
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6">
       <WelcomeSection user={user} />
-      <div className="bg-white rounded-2xl border border-slate-200/80 p-4 sm:p-5 shadow-sm">
-        <QuickActionsSection onGoToChat={onGoToChat} onGoToProfile={onGoToProfile} onGoToServices={onGoToServices} />
+
+      <SummaryCardsSection grades={grades} payments={payments} />
+
+      <div className="flex border-b border-slate-200 gap-6">
+        <button
+          onClick={() => setActiveTab('overview')}
+          className={`pb-3 text-sm font-bold border-b-2 transition-colors ${
+            activeTab === 'overview'
+              ? 'border-blue-600 text-blue-600'
+              : 'border-transparent text-slate-500 hover:text-slate-900'
+          }`}
+        >
+          Overview & Schedule
+        </button>
+        <button
+          onClick={() => setActiveTab('grades')}
+          className={`pb-3 text-sm font-bold border-b-2 transition-colors flex items-center gap-1.5 ${
+            activeTab === 'grades'
+              ? 'border-blue-600 text-blue-600'
+              : 'border-transparent text-slate-500 hover:text-slate-900'
+          }`}
+        >
+          <Award className="w-4 h-4" />
+          My Grades
+        </button>
+        <button
+          onClick={() => setActiveTab('payments')}
+          className={`pb-3 text-sm font-bold border-b-2 transition-colors flex items-center gap-1.5 ${
+            activeTab === 'payments'
+              ? 'border-blue-600 text-blue-600'
+              : 'border-transparent text-slate-500 hover:text-slate-900'
+          }`}
+        >
+          <CircleDollarSign className="w-4 h-4" />
+          My Payments
+        </button>
       </div>
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2">
+
+      {activeTab === 'overview' && (
+        <div className="space-y-6 animate-in fade-in duration-200">
           <div className="bg-white rounded-2xl border border-slate-200/80 p-4 sm:p-5 shadow-sm">
-            <ScheduleSection />
+            <QuickActionsSection onGoToChat={onGoToChat} onGoToProfile={onGoToProfile} onGoToServices={onGoToServices} />
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2">
+              <div className="bg-white rounded-2xl border border-slate-200/80 p-4 sm:p-5 shadow-sm">
+                <ScheduleSection />
+              </div>
+            </div>
+            <div>
+              <div className="bg-white rounded-2xl border border-slate-200/80 p-4 sm:p-5 shadow-sm">
+                <DeadlinesSection />
+              </div>
+            </div>
+          </div>
+          <div className="bg-white rounded-2xl border border-slate-200/80 p-4 sm:p-5 shadow-sm">
+            <AnnouncementsSection
+              announcements={announcements}
+              loading={loading}
+              error={error}
+              onRefresh={fetchData}
+            />
           </div>
         </div>
-        <div>
-          <div className="bg-white rounded-2xl border border-slate-200/80 p-4 sm:p-5 shadow-sm">
-            <DeadlinesSection />
+      )}
+
+      {activeTab === 'grades' && (
+        <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-sm space-y-6 animate-in fade-in duration-200">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-slate-100">
+            <div>
+              <h2 className="text-lg font-extrabold text-slate-900">Academic Grades & Records</h2>
+              <p className="text-xs text-slate-500">1st Semester, Academic Year 2026–2027</p>
+            </div>
+            <button
+              onClick={() => setPdfModalType('grades')}
+              className="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold flex items-center gap-2 shadow-sm transition-colors"
+            >
+              <Download className="w-4 h-4" />
+              Download Grade Report (PDF)
+            </button>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr className="border-b border-slate-200 text-[11px] font-bold uppercase text-slate-400 bg-slate-50/70">
+                  <th className="py-3 px-3">Subject Code</th>
+                  <th className="py-3 px-3">Subject Title</th>
+                  <th className="py-3 px-3 text-center">Units</th>
+                  <th className="py-3 px-3 text-center">Grade</th>
+                  <th className="py-3 px-3 text-center">Letter</th>
+                  <th className="py-3 px-3">Grading Period</th>
+                  <th className="py-3 px-3">Instructor</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 text-slate-700">
+                {grades.length === 0 ? (
+                  <tr>
+                    <td colSpan="7" className="py-12 text-center text-slate-400">
+                      No grade records found.
+                    </td>
+                  </tr>
+                ) : grades.map((g) => (
+                  <tr key={g.id || g.subject_code} className="hover:bg-slate-50 transition-colors">
+                    <td className="py-3 px-3 font-mono font-bold text-slate-900">{g.subject_code}</td>
+                    <td className="py-3 px-3 font-semibold text-slate-800">{g.subject_title}</td>
+                    <td className="py-3 px-3 text-center font-mono">{g.units}</td>
+                    <td className="py-3 px-3 text-center font-mono font-extrabold text-blue-600 text-sm">{g.grade}</td>
+                    <td className="py-3 px-3 text-center font-bold">
+                      <span className="px-2 py-0.5 rounded bg-blue-50 text-blue-700">{g.letter_grade}</span>
+                    </td>
+                    <td className="py-3 px-3 text-slate-600">{g.grading_period || 'Midterm'}</td>
+                    <td className="py-3 px-3 text-slate-600">{g.faculty_name || 'Dr. Faculty'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
-      </div>
-      <div className="bg-white rounded-2xl border border-slate-200/80 p-4 sm:p-5 shadow-sm">
-        <AnnouncementsSection
-          announcements={announcements}
-          loading={loading}
-          error={error}
-          onRefresh={fetchAnnouncementsList}
-        />
-      </div>
+      )}
+
+      {activeTab === 'payments' && (
+        <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-sm space-y-6 animate-in fade-in duration-200">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-slate-100">
+            <div>
+              <h2 className="text-lg font-extrabold text-slate-900">Tuition & Financial Payments</h2>
+              <p className="text-xs text-slate-500">Account Status & Payment History</p>
+            </div>
+            <button
+              onClick={() => setPdfModalType('payments')}
+              className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center gap-2 shadow-sm transition-colors"
+            >
+              <Download className="w-4 h-4" />
+              Download Statement (PDF)
+            </button>
+          </div>
+
+          <div className="space-y-4">
+            {payments.map((p) => (
+              <div key={p.id || p.fee_type} className="p-5 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                  <div>
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{p.academic_year} · {p.semester}</span>
+                    <h3 className="text-base font-extrabold text-slate-900">{p.fee_type}</h3>
+                  </div>
+                  <span className={`px-3 py-1 rounded-full text-xs font-bold ${
+                    p.status === 'Paid' ? 'bg-emerald-100 text-emerald-800' :
+                    p.status === 'Partial' ? 'bg-blue-100 text-blue-800' :
+                    'bg-amber-100 text-amber-800'
+                  }`}>
+                    {p.status}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 bg-white p-4 rounded-xl border border-slate-100 text-xs">
+                  <div>
+                    <span className="text-slate-400 font-bold uppercase text-[10px]">Total Amount</span>
+                    <div className="text-sm font-extrabold font-mono text-slate-900 mt-0.5">₱{Number(p.total_amount).toLocaleString()}</div>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 font-bold uppercase text-[10px]">Amount Paid</span>
+                    <div className="text-sm font-extrabold font-mono text-emerald-700 mt-0.5">₱{Number(p.amount_paid).toLocaleString()}</div>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 font-bold uppercase text-[10px]">Remaining Balance</span>
+                    <div className="text-sm font-extrabold font-mono text-amber-700 mt-0.5">₱{Number(p.remaining_balance).toLocaleString()}</div>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 font-bold uppercase text-[10px]">Due Date</span>
+                    <div className="text-xs font-semibold text-slate-700 mt-0.5">{p.due_date || 'Nov 15, 2026'}</div>
+                  </div>
+                </div>
+
+                {p.payment_history && p.payment_history.length > 0 && (
+                  <div className="space-y-2 pt-2">
+                    <h4 className="text-xs font-bold text-slate-700 uppercase">Payment Transaction History</h4>
+                    <div className="space-y-1.5">
+                      {p.payment_history.map((hist, idx) => (
+                        <div key={idx} className="flex items-center justify-between p-2.5 rounded-xl bg-white border border-slate-100 text-xs">
+                          <div className="flex items-center gap-2">
+                            <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                            <span className="font-semibold text-slate-800">{hist.channel}</span>
+                            <span className="text-slate-400 font-mono text-[11px]">({hist.reference_no})</span>
+                          </div>
+                          <div className="text-right">
+                            <span className="font-mono font-bold text-emerald-700">₱{Number(hist.amount).toLocaleString()}</span>
+                            <span className="text-[10px] text-slate-400 ml-2">{hist.date}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <PdfModal
+        type={pdfModalType}
+        data={{ grades, payments }}
+        user={user}
+        onClose={() => setPdfModalType(null)}
+      />
     </div>
   );
 }

@@ -139,3 +139,46 @@ export async function getSystemLogs() {
   const data = await apiRequest('/admin/logs');
   return data.logs || [];
 }
+
+export async function getFacultyStudents() {
+  try {
+    const data = await apiRequest('/faculty/students');
+    return data.students || [];
+  } catch (err) {
+    return [];
+  }
+}
+
+export async function getMyGrades() {
+  try {
+    const data = await apiRequest('/grades');
+    return data.grades || [];
+  } catch (err) {
+    return [];
+  }
+}
+
+export async function upsertGrade(gradeData) {
+  const data = await apiRequest('/grades', {
+    method: 'POST',
+    body: JSON.stringify(gradeData)
+  });
+  return data.grade;
+}
+
+export async function getMyPayments() {
+  try {
+    const data = await apiRequest('/payments');
+    return data.payments || [];
+  } catch (err) {
+    return [];
+  }
+}
+
+export async function upsertPayment(paymentData) {
+  const data = await apiRequest('/payments', {
+    method: 'POST',
+    body: JSON.stringify(paymentData)
+  });
+  return data.payment;
+}

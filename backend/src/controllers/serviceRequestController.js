@@ -179,6 +179,21 @@ export async function getAllUsers(req, res, next) {
   } catch (err) { next(err); }
 }
 
+/** GET /api/faculty/students */
+export async function getFacultyStudents(req, res, next) {
+  try {
+    const user = await requireUser(req);
+    requireRole(user, ['Faculty', 'Admin', 'Staff']);
+    const supabase = requireClient();
+    const { data, error } = await supabase.from('profiles')
+      .select('id, full_name, email, student_id, year_level, department')
+      .eq('role', 'Student')
+      .order('full_name', { ascending: true });
+    if (error) throw new AppError(400, error.message);
+    res.json({ students: data || [] });
+  } catch (err) { next(err); }
+}
+
 /** POST /api/admin/users */
 export async function createUser(req, res, next) {
   try {
@@ -243,6 +258,9 @@ export async function deleteUser(req, res, next) {
     if (error) throw new AppError(400, error.message);
     await logAction(supabase, user.email, 'user_deleted', `Deleted user account: ${targetUser?.email || id}`);
     res.json({ success: true });
+  } catch (err) { next(err); }
+}
+
 /** GET /api/admin/settings */
 export async function getSystemSettings(req, res, next) {
   try {
@@ -337,8 +355,6 @@ export async function getSystemAnalytics(req, res, next) {
     });
   } catch (err) { next(err); }
 }
-  } catch (err) { next(err); }
-}
 
 /** GET /api/admin/logs */
 export async function getSystemLogs(req, res, next) {
@@ -350,6 +366,118 @@ export async function getSystemLogs(req, res, next) {
       .select('*').order('created_at', { ascending: false }).limit(50);
     if (error) throw new AppError(400, error.message);
     res.json({ logs: data || [] });
+  } catch (err) { next(err); }
+}
+
+
+/** GET /api/grades */
+export async function getGrades(req, res, next) {
+  try {
+    const user = await requireUser(req);
+    const supabase = requireClient();
+    const { student_id } = req.query || {};
+    let query = supabase.from('grades').select('*').order('academic_year', { ascending: false });
+    if (user.role === 'Student') {
+      query = query.eq('user_id', user.id);
+    } else if (student_id) {
+      query = query.eq('student_id', student_id);
+    }
+    const { data, error } = await query;
+    if (error) throw new AppError(400, error.message);
+    res.json({ grades: data || [] });
+  } catch (err) { next(err); }
+}
+
+/** POST /api/grades */
+export async function createOrUpdateGrade(req, res, next) {
+  try {
+    const user = await requireUser(req);
+    requireRole(user, ['Faculty', 'Admin']);
+    const supabase = requireClient();
+    const { id, user_id, student_id, subject_code, subject_title, units, grade, letter_grade, grading_period, semester, academic_year } = req.body || {};
+    if (!subject_code || !user_id) throw new AppError(400, 'subject_code and user_id are required.');
+    
+    let result;
+    if (id) {
+      const { data, error } = await supabase.from('grades').update({
+        subject_code, subject_title: subject_title || '', units: units || 3.0,
+        grade: grade !== undefined ? grade : null, letter_grade: letter_grade || 'A',
+        grading_period: grading_period || 'Midterm', semester: semester || '1st Semester',
+        academic_year: academic_year || '2026–2027', faculty_name: user.name, updated_at: new Date().toISOString()
+      }).eq('id', id).select().single();
+      if (error) throw new AppError(400, error.message);
+      result = data;
+    } else {
+      const { data, error } = await supabase.from('grades').insert({
+        user_id, student_id: student_id || '', subject_code, subject_title: subject_title || '',
+        units: units || 3.0, grade: grade !== undefined ? grade : null, letter_grade: letter_grade || 'A',
+        grading_period: grading_period || 'Midterm', semester: semester || '1st Semester',
+        academic_year: academic_year || '2026–2027', faculty_name: user.name
+      }).select().single();
+      if (error) throw new AppError(400, error.message);
+      result = data;
+    }
+    await logAction(supabase, user.email, 'grade_updated', `Grade updated for ${subject_code}`);
+    res.status(201).json({ grade: result });
+  } catch (err) { next(err); }
+}
+
+/** GET /api/payments */
+export async function getPayments(req, res, next) {
+  try {
+    const user = await requireUser(req);
+    const supabase = requireClient();
+    const { student_id } = req.query || {};
+    let query = supabase.from('payments').select('*').order('created_at', { ascending: false });
+    if (user.role === 'Student') {
+      query = query.eq('user_id', user.id);
+    } else if (student_id) {
+      query = query.eq('student_id', student_id);
+    }
+    const { data, error } = await query;
+    if (error) throw new AppError(400, error.message);
+    res.json({ payments: data || [] });
+  } catch (err) { next(err); }
+}
+
+/** POST /api/payments */
+export async function createOrUpdatePayment(req, res, next) {
+  try {
+    const user = await requireUser(req);
+    requireRole(user, ['Staff', 'Admin']);
+    const supabase = requireClient();
+    const { id, user_id, student_id, fee_type, total_amount, amount_paid, due_date, semester, academic_year, payment_history } = req.body || {};
+    if (total_amount === undefined || !user_id) throw new AppError(400, 'total_amount and user_id are required.');
+
+    const total = parseFloat(total_amount) || 0;
+    const paid = parseFloat(amount_paid) || 0;
+    const balance = Math.max(0, total - paid);
+    let status = 'Pending';
+    if (paid >= total) status = 'Paid';
+    else if (paid > 0) status = 'Partial';
+
+    let result;
+    if (id) {
+      const { data, error } = await supabase.from('payments').update({
+        fee_type: fee_type || 'Tuition Fee', total_amount: total, amount_paid: paid,
+        remaining_balance: balance, due_date: due_date || null, status,
+        semester: semester || '1st Semester', academic_year: academic_year || '2026–2027',
+        payment_history: payment_history || [], updated_at: new Date().toISOString()
+      }).eq('id', id).select().single();
+      if (error) throw new AppError(400, error.message);
+      result = data;
+    } else {
+      const { data, error } = await supabase.from('payments').insert({
+        user_id, student_id: student_id || '', fee_type: fee_type || 'Tuition Fee',
+        total_amount: total, amount_paid: paid, remaining_balance: balance,
+        due_date: due_date || null, status, semester: semester || '1st Semester',
+        academic_year: academic_year || '2026–2027', payment_history: payment_history || []
+      }).select().single();
+      if (error) throw new AppError(400, error.message);
+      result = data;
+    }
+    await logAction(supabase, user.email, 'payment_updated', `Payment record updated for fee: ${fee_type}`);
+    res.status(201).json({ payment: result });
   } catch (err) { next(err); }
 }
 

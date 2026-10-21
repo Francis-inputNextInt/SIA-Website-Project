@@ -9,7 +9,7 @@ import AdminDashboard from './dashboards/AdminDashboard';
  * Delegates rendering to the appropriate role-specific dashboard
  * based on user.role (case-insensitive).
  */
-export default function DashboardPage({ user, onGoToChat, onGoToProfile, onGoToServices }) {
+export default function DashboardPage({ user, onGoToChat, onGoToProfile, onGoToServices, onGoToCalendar }) {
   const role = (user?.role || 'student').toLowerCase();
 
   if (role === 'faculty') {
@@ -59,6 +59,7 @@ export default function DashboardPage({ user, onGoToChat, onGoToProfile, onGoToS
         onGoToChat={onGoToChat}
         onGoToProfile={onGoToProfile}
         onGoToServices={onGoToServices}
+        onGoToCalendar={onGoToCalendar}
       />
     </main>
   );

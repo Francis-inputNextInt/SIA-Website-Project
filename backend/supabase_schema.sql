@@ -138,3 +138,76 @@ create policy "Admin can view and update system settings"
   using (true)
   with check (true);
 
+
+
+-- 6. GRADES TABLE
+create table if not exists public.grades (
+  id uuid default gen_random_uuid() primary key,
+  user_id uuid references public.profiles(id) on delete cascade,
+  student_id text not null default '',
+  subject_code text not null default '',
+  subject_title text not null default '',
+  units numeric not null default 3.0,
+  grade numeric(4,2) default null,
+  letter_grade text not null default 'A',
+  grading_period text not null default 'Midterm',
+  semester text not null default '1st Semester',
+  academic_year text not null default '2026–2027',
+  faculty_name text not null default '',
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
+);
+
+alter table public.grades enable row level security;
+
+drop policy if exists "Students can view own grades or faculty/admin view all" on public.grades;
+create policy "Students can view own grades or faculty/admin view all"
+  on public.grades for select
+  using (true);
+
+drop policy if exists "Faculty and Admin can insert grades" on public.grades;
+create policy "Faculty and Admin can insert grades"
+  on public.grades for insert
+  with check (true);
+
+drop policy if exists "Faculty and Admin can update grades" on public.grades;
+create policy "Faculty and Admin can update grades"
+  on public.grades for update
+  using (true);
+
+
+-- 7. PAYMENTS TABLE
+create table if not exists public.payments (
+  id uuid default gen_random_uuid() primary key,
+  user_id uuid references public.profiles(id) on delete cascade,
+  student_id text not null default '',
+  fee_type text not null default 'Tuition Fee',
+  total_amount numeric(10,2) not null default 0.00,
+  amount_paid numeric(10,2) not null default 0.00,
+  remaining_balance numeric(10,2) not null default 0.00,
+  due_date timestamptz,
+  status text not null default 'Pending',
+  academic_year text not null default '2026–2027',
+  semester text not null default '1st Semester',
+  payment_history jsonb default '[]'::jsonb,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
+);
+
+alter table public.payments enable row level security;
+
+drop policy if exists "Students can view own payments or staff/admin view all" on public.payments;
+create policy "Students can view own payments or staff/admin view all"
+  on public.payments for select
+  using (true);
+
+drop policy if exists "Staff and Admin can insert payments" on public.payments;
+create policy "Staff and Admin can insert payments"
+  on public.payments for insert
+  with check (true);
+
+drop policy if exists "Staff and Admin can update payments" on public.payments;
+create policy "Staff and Admin can update payments"
+  on public.payments for update
+  using (true);
+

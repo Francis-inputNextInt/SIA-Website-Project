@@ -6,13 +6,17 @@ import {
   getAllServiceRequests,
   updateServiceRequestStatus,
   createAnnouncement,
-  getAnnouncements
+  getAnnouncements,
+  getMyGrades,
+  upsertGrade,
+  getFacultyStudents
 } from '../../services/serviceRequestService';
 import { supabase } from '../../services/supabase';
 import {
   BookOpen, Users, Megaphone, MessageSquare, Building2, Clock, RefreshCw,
-  CheckCircle2, AlertCircle, X, Send, ChevronRight, FileText, Check, ShieldCheck
+  CheckCircle2, AlertCircle, X, Send, ChevronRight, FileText, Check, ShieldCheck, Award, Edit3
 } from 'lucide-react';
+import GradeModal from './GradeModal';
 
 function getGreeting() {
   const h = new Date().getHours();
@@ -223,6 +227,9 @@ export default function FacultyDashboard({ user, onGoToChat, onGoToProfile, onGo
   const [inquiries, setInquiries] = useState([]);
   const [filter, setFilter] = useState('All');
   const [announcements, setAnnouncements] = useState([]);
+  const [grades, setGrades] = useState([]);
+  const [students, setStudents] = useState([]);
+  const [gradeModalData, setGradeModalData] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
   const [showAnnModal, setShowAnnModal] = useState(false);
   const [newTitle, setNewTitle] = useState('');
@@ -233,9 +240,11 @@ export default function FacultyDashboard({ user, onGoToChat, onGoToProfile, onGo
   const loadData = async () => {
     try {
       setRefreshing(true);
-      const [reqs, anns] = await Promise.all([
+      const [reqs, anns, grds, stds] = await Promise.all([
         getAllServiceRequests().catch(() => []),
-        getAnnouncements().catch(() => [])
+        getAnnouncements().catch(() => []),
+        getMyGrades().catch(() => []),
+        getFacultyStudents().catch(() => [])
       ]);
       setInquiries((reqs || []).map(r => ({
         id: r.id,
@@ -248,10 +257,14 @@ export default function FacultyDashboard({ user, onGoToChat, onGoToProfile, onGo
         remarks: r.remarks || r.staff_notes || r.response_notes
       })));
       setAnnouncements(anns || []);
+      setGrades(grds || []);
+      setStudents(stds || []);
     } catch (err) {
       console.error('Failed to load faculty dashboard data:', err);
       setInquiries([]);
       setAnnouncements([]);
+      setGrades([]);
+      setStudents([]);
     } finally {
       setRefreshing(false);
     }
@@ -270,6 +283,9 @@ export default function FacultyDashboard({ user, onGoToChat, onGoToProfile, onGo
         .on('postgres_changes', { event: '*', schema: 'public', table: 'service_requests' }, () => {
           loadData();
         })
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'grades' }, () => {
+          loadData();
+        })
         .subscribe();
     }
 
@@ -279,6 +295,16 @@ export default function FacultyDashboard({ user, onGoToChat, onGoToProfile, onGo
       }
     };
   }, []);
+
+  const handleSaveGrade = async (gradePayload) => {
+    try {
+      await upsertGrade(gradePayload);
+      await loadData();
+    } catch (e) {
+      alert(e.message || 'Failed to save grade.');
+      throw e;
+    }
+  };
 
   const handleUpdateStatus = async (id, newStatus, remarksText = '') => {
     try {
@@ -413,6 +439,84 @@ export default function FacultyDashboard({ user, onGoToChat, onGoToProfile, onGo
               </div>
             </div>
           ))}
+        </div>
+      </div>
+
+      <div id="faculty-grades-section" className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-sm space-y-4">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+          <div className="flex items-center gap-2">
+            <div className="p-1.5 rounded-lg bg-emerald-100">
+              <Award className="w-4 h-4 text-emerald-600" />
+            </div>
+            <div>
+              <h2 className="text-base font-bold text-slate-900">Student Grade Management & Encoding</h2>
+              <p className="text-xs text-slate-500">Encode, update, and publish official midterm and final grades for enrolled students.</p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setGradeModalData({})}
+            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-sm transition-colors flex items-center gap-1.5"
+          >
+            <Check className="w-4 h-4" />
+            Encode New Grade
+          </button>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="border-b border-slate-100 text-[11px] font-bold uppercase text-slate-400">
+                <th className="py-3 px-3">Student</th>
+                <th className="py-3 px-3">Subject</th>
+                <th className="py-3 px-3 text-center">Units</th>
+                <th className="py-3 px-3 text-center">Grade</th>
+                <th className="py-3 px-3">Period & Term</th>
+                <th className="py-3 px-3 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 text-xs text-slate-700">
+              {grades.length === 0 ? (
+                <tr>
+                  <td colSpan="6" className="py-8 text-center text-slate-400 font-medium">
+                    No grades encoded yet. Click "Encode New Grade" to add records.
+                  </td>
+                </tr>
+              ) : (
+                grades.map(g => {
+                  const studentObj = students.find(s => s.id === g.user_id);
+                  return (
+                    <tr key={g.id} className="hover:bg-slate-50/80 transition-colors">
+                      <td className="py-3 px-3 font-semibold text-slate-900">
+                        {studentObj?.full_name || g.student_id || 'Student ID: ' + (g.user_id?.slice(0, 8) || 'N/A')}
+                        <div className="text-[10px] text-slate-400 font-mono font-normal">{g.student_id}</div>
+                      </td>
+                      <td className="py-3 px-3">
+                        <div className="font-bold text-indigo-600">{g.subject_code}</div>
+                        <div className="text-[11px] text-slate-600">{g.subject_title}</div>
+                      </td>
+                      <td className="py-3 px-3 text-center font-mono">{g.units}</td>
+                      <td className="py-3 px-3 text-center font-mono font-extrabold text-indigo-700 text-sm">
+                        {g.grade !== null && g.grade !== undefined ? g.grade : '—'}
+                      </td>
+                      <td className="py-3 px-3">
+                        <div className="font-semibold text-slate-800">{g.grading_period || 'Midterm'}</div>
+                        <div className="text-[10px] text-slate-500">{g.semester} · {g.academic_year}</div>
+                      </td>
+                      <td className="py-3 px-3 text-right">
+                        <button
+                          onClick={() => setGradeModalData(g)}
+                          className="px-3 py-1.5 bg-slate-100 hover:bg-indigo-50 hover:text-indigo-700 text-slate-700 rounded-lg text-xs font-semibold transition-colors inline-flex items-center gap-1"
+                        >
+                          <Edit3 className="w-3.5 h-3.5" /> Edit
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
         </div>
       </div>
 
@@ -596,6 +700,15 @@ export default function FacultyDashboard({ user, onGoToChat, onGoToProfile, onGo
         onClose={() => setSelectedInquiry(null)}
         onUpdateStatus={handleUpdateStatus}
       />
+      {gradeModalData !== null && (
+        <GradeModal
+          gradeData={gradeModalData}
+          students={students}
+          onClose={() => setGradeModalData(null)}
+          onSave={handleSaveGrade}
+        />
+      )}
+
     </div>
   );
 }
