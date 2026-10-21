@@ -1,19 +1,32 @@
 /**
  * Chat API service — calls the backend POST /api/chat exclusively.
- *
- * All response-generation logic lives server-side (backend/src/data/responseEngine.js).
- * There is deliberately NO local fallback here: message generation must not be
- * duplicated in the browser. If the server is unreachable the error is surfaced
- * so the UI can show a helpful message.
+ * Sends user message, conversation history, and bearer token if authenticated.
  */
+import { supabase } from './supabase.js';
+
 const env = (typeof import.meta !== 'undefined' && import.meta.env) || {};
 const API_BASE = env.VITE_API_BASE_URL || '/api';
 
-export async function sendChatMessage(userMessage) {
+async function getAccessToken() {
+  if (!supabase) return null;
+  try {
+    const { data } = await supabase.auth.getSession();
+    return data?.session?.access_token || null;
+  } catch (err) {
+    return null;
+  }
+}
+
+export async function sendChatMessage(userMessage, history = []) {
+  const token = await getAccessToken();
+
   const response = await fetch(`${API_BASE}/chat`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ message: userMessage })
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {})
+    },
+    body: JSON.stringify({ message: userMessage, history })
   });
 
   if (!response.ok) {
@@ -29,3 +42,4 @@ export async function sendChatMessage(userMessage) {
 
   return data;
 }
+

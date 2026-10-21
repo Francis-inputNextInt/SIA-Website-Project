@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import Header from './components/Header';
 import Sidebar from './components/Sidebar';
 import ChatWindow from './components/ChatWindow';
@@ -16,20 +16,50 @@ import { INITIAL_ASSISTANT_MESSAGE } from './data/mockResponses';
 import { sendChatMessage } from './services/chatService';
 import { getCurrentUser, clearUserSession, isEnrolledUser } from './services/authService';
 
+// Helper for user-scoped chat storage key
+function getChatStorageKey(userId) {
+  return userId ? `chat_history_${userId}` : 'chat_history_guest';
+}
+
 export default function App() {
-  const [messages, setMessages] = useState([
-    {
+  const [currentUser, setCurrentUser] = useState(() => getCurrentUser());
+
+  const [messages, setMessages] = useState(() => {
+    const user = getCurrentUser();
+    if (user && user.id) {
+      try {
+        const saved = localStorage.getItem(getChatStorageKey(user.id));
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        }
+      } catch (e) {
+        console.warn('Error reading stored chat history:', e);
+      }
+    }
+    return [{
       ...INITIAL_ASSISTANT_MESSAGE,
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    }
-  ]);
+    }];
+  });
+
   const [isTyping, setIsTyping] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
-  const [currentUser, setCurrentUser] = useState(() => getCurrentUser());
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [view, setView] = useState('dashboard'); // 'dashboard' | 'chat' | 'profile'
   const [toast, setToast] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  // Save messages to user-scoped localStorage whenever messages change
+  useEffect(() => {
+    if (currentUser && currentUser.id) {
+      try {
+        localStorage.setItem(getChatStorageKey(currentUser.id), JSON.stringify(messages));
+      } catch (e) {
+        console.warn('Error saving chat history:', e);
+      }
+    }
+  }, [messages, currentUser]);
 
   // Show a toast notification and auto-clear
   const showToast = useCallback(({ type = 'success', title, message, duration }) => {
@@ -41,6 +71,7 @@ export default function App() {
     if (!content || !content.trim() || isTyping) return;
 
     const trimmed = content.trim();
+    const activeUserId = currentUser?.id;
 
     // 1. Add User message
     const userMessage = {
@@ -54,10 +85,12 @@ export default function App() {
     setIsTyping(true);
 
     try {
-      // Fetch AI response from the backend response engine (POST /api/chat)
-      const aiResponse = await sendChatMessage(trimmed);
+      // Fetch AI response from backend POST /api/chat with conversation history
+      const aiResponse = await sendChatMessage(trimmed, messages);
+      if (activeUserId !== currentUser?.id) return;
       setMessages((prev) => [...prev, aiResponse]);
     } catch (err) {
+      if (activeUserId !== currentUser?.id) return;
       console.error('Error generating response:', err);
       // Fallback error message
       setMessages((prev) => [
@@ -70,9 +103,11 @@ export default function App() {
         }
       ]);
     } finally {
-      setIsTyping(false);
+      if (activeUserId === currentUser?.id) {
+        setIsTyping(false);
+      }
     }
-  }, [isTyping]);
+  }, [isTyping, currentUser, messages]);
 
   // Click on suggested prompt
   const handleSelectQuestion = useCallback((question) => {
@@ -83,6 +118,11 @@ export default function App() {
   // Reset conversation to initial welcome message
   const handleNewConversation = useCallback(() => {
     setIsResetting(true);
+    if (currentUser && currentUser.id) {
+      try {
+        localStorage.removeItem(getChatStorageKey(currentUser.id));
+      } catch (e) {}
+    }
     setMessages([
       {
         ...INITIAL_ASSISTANT_MESSAGE,
@@ -95,7 +135,7 @@ export default function App() {
     setTimeout(() => {
       setIsResetting(false);
     }, 400);
-  }, []);
+  }, [currentUser]);
 
   // Open the login/signup modal
   const handleOpenLogin = useCallback(() => setIsAuthOpen(true), []);
@@ -103,9 +143,24 @@ export default function App() {
   // Successful login / registration
   const handleLogin = useCallback((user) => {
     setCurrentUser(user);
-    // Don't close the modal here — AuthModal displays a "Welcome back" success
-    // message and then closes itself via onClose() after ~900ms, so the user
-    // gets a clear confirmation before landing on the assistant.
+    let loaded = null;
+    if (user && user.id) {
+      try {
+        const saved = localStorage.getItem(getChatStorageKey(user.id));
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed) && parsed.length > 0) loaded = parsed;
+        }
+      } catch (e) {
+        console.warn('Error loading chat history on login:', e);
+      }
+    }
+    setMessages(loaded || [
+      {
+        ...INITIAL_ASSISTANT_MESSAGE,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      }
+    ]);
     showToast({
       type: 'success',
       title: 'Signed in successfully',
@@ -118,6 +173,12 @@ export default function App() {
     clearUserSession();
     setCurrentUser(null);
     setView('dashboard');
+    setMessages([
+      {
+        ...INITIAL_ASSISTANT_MESSAGE,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      }
+    ]);
     showToast({
       type: 'info',
       title: 'Signed out',

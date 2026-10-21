@@ -302,12 +302,12 @@ function AnnouncementsSection({ announcements = [], loading = false, error = nul
 
 /* ── Section: Quick Actions ───────────────────────────────── */
 
-function QuickActionsSection({ onGoToChat, onGoToProfile, onGoToServices }) {
+function QuickActionsSection({ onGoToChat, onGoToProfile, onGoToServices, onGoToCalendar }) {
   const [expandedId, setExpandedId] = useState(null);
 
   const actions = [
     { ...QUICK_ACTIONS[0], onClick: onGoToChat },
-    { ...QUICK_ACTIONS[1], onClick: () => {} },
+    { ...QUICK_ACTIONS[1], onClick: onGoToCalendar },
     { ...QUICK_ACTIONS[2], onClick: onGoToProfile },
     { ...QUICK_ACTIONS[3], onClick: onGoToServices },
   ];
@@ -501,7 +501,7 @@ function PdfModal({ type, data, user, onClose }) {
 
 /* ── Main Dashboard ───────────────────────────────────────── */
 
-export default function StudentDashboard({ user, onGoToChat, onGoToProfile, onGoToServices }) {
+export default function StudentDashboard({ user, onGoToChat, onGoToProfile, onGoToServices, onGoToCalendar }) {
   const [activeTab, setActiveTab] = useState('overview');
   const [announcements, setAnnouncements] = useState([]);
   const [grades, setGrades] = useState([]);
@@ -600,7 +600,7 @@ export default function StudentDashboard({ user, onGoToChat, onGoToProfile, onGo
       {activeTab === 'overview' && (
         <div className="space-y-6 animate-in fade-in duration-200">
           <div className="bg-white rounded-2xl border border-slate-200/80 p-4 sm:p-5 shadow-sm">
-            <QuickActionsSection onGoToChat={onGoToChat} onGoToProfile={onGoToProfile} onGoToServices={onGoToServices} />
+            <QuickActionsSection onGoToChat={onGoToChat} onGoToProfile={onGoToProfile} onGoToServices={onGoToServices} onGoToCalendar={onGoToCalendar} />
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2">
