@@ -543,9 +543,9 @@ export default function StudentDashboard({ user, onGoToChat, onGoToProfile, onGo
     if (supabase) {
       subscription = supabase
         .channel('public:student_data')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'announcements' }, () => {
-          fetchData();
-        })
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'announcements' }, () => { fetchData(); })
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'payments' }, () => { fetchData(); })
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'grades' }, () => { fetchData(); })
         .subscribe();
     }
 

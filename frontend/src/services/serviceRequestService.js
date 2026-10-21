@@ -143,9 +143,11 @@ export async function getSystemLogs() {
 export async function getFacultyStudents() {
   try {
     const data = await apiRequest('/faculty/students');
+    console.log('[serviceRequestService] getFacultyStudents response:', data);
     return data.students || [];
   } catch (err) {
-    return [];
+    console.error('[serviceRequestService] getFacultyStudents failed:', err.message);
+    throw err;
   }
 }
 
@@ -174,6 +176,15 @@ export async function getMyPayments() {
     return [];
   }
 }
+export async function getPayments() {
+  try {
+    const data = await apiRequest('/payments');
+    return data.payments || [];
+  } catch (err) {
+    return [];
+  }
+}
+
 
 export async function upsertPayment(paymentData) {
   const data = await apiRequest('/payments', {

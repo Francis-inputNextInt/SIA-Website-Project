@@ -183,15 +183,20 @@ export async function getAllUsers(req, res, next) {
 export async function getFacultyStudents(req, res, next) {
   try {
     const user = await requireUser(req);
+    console.log('[getFacultyStudents] Request received from user:', user?.email, 'role:', user?.role);
     requireRole(user, ['Faculty', 'Admin', 'Staff']);
     const supabase = requireClient();
     const { data, error } = await supabase.from('profiles')
-      .select('id, full_name, email, student_id, year_level, department')
-      .eq('role', 'Student')
+      .select('id, full_name, email, student_id, year_level, department, role')
+      .ilike('role', 'student')
       .order('full_name', { ascending: true });
+    console.log('[getFacultyStudents] Supabase query result count:', data?.length, 'error:', error?.message);
     if (error) throw new AppError(400, error.message);
     res.json({ students: data || [] });
-  } catch (err) { next(err); }
+  } catch (err) {
+    console.error('[getFacultyStudents] Error:', err.message);
+    next(err);
+  }
 }
 
 /** POST /api/admin/users */
