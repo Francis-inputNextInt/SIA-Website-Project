@@ -12,67 +12,6 @@
 
 import { supabase } from './supabase.js';
 
-// Demo Accounts (preview-only references for the demo buttons — actual
-// credentials and profile data live in Supabase and are managed server-side).
-export const DEMO_ACCOUNTS = [
-  {
-    id: 'usr_student_01',
-    name: 'Alex Johnson',
-    email: 'student@campus.edu',
-    studentId: '2024-00842',
-    role: 'Student',
-    department: 'Computer Science & IT',
-    yearLevel: '3rd Year Undergraduate',
-    avatarColor: 'bg-blue-600',
-    initials: 'AJ'
-  },
-  {
-    id: 'usr_faculty_01',
-    name: 'Dr. Eleanor Vance',
-    email: 'faculty@campus.edu',
-    studentId: 'FAC-2019-441',
-    role: 'Faculty',
-    department: 'Department of Computer Science',
-    yearLevel: 'Associate Professor',
-    avatarColor: 'bg-indigo-600',
-    initials: 'EV'
-  },
-  {
-    id: 'usr_staff_01',
-    name: 'Marcus Thorne',
-    email: 'staff@campus.edu',
-    studentId: 'STF-2021-104',
-    role: 'Staff',
-    department: 'Student Affairs & Admissions',
-    yearLevel: 'Senior Coordinator',
-    avatarColor: 'bg-emerald-600',
-    initials: 'MT'
-  },
-  {
-    id: 'usr_admin_01',
-    name: 'Dean Victoria Sterling',
-    email: 'admin@campus.edu',
-    studentId: 'ADM-2018-001',
-    role: 'Admin',
-    department: 'Office of the University President',
-    yearLevel: 'System Administrator',
-    avatarColor: 'bg-rose-600',
-    initials: 'VS'
-  },
-  {
-    id: 'usr_applicant_01',
-    name: 'Jordan Smith',
-    email: 'applicant@gmail.com',
-    studentId: 'APP-2025-992',
-    role: 'Applicant',
-    department: 'Prospective Student',
-    yearLevel: 'Not Enrolled - Fall 2025 Applicant',
-    avatarColor: 'bg-amber-500',
-    initials: 'JS',
-    enrolled: false
-  }
-];
-
 const STORAGE_KEY = 'campus_ai_auth_user';
 const REMEMBER_KEY = 'campus_ai_auth_remember';
 

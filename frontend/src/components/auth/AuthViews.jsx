@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Eye, EyeOff, LogIn, UserPlus, KeyRound, Mail, User, IdCard, ArrowRight, CheckCircle2, ShieldAlert, Loader2, GraduationCap } from 'lucide-react';
-import { DEMO_ACCOUNTS, loginUser, registerUser, resendVerificationEmail, verifyEmailOtp, sendPasswordReset } from '../../services/authService';
+import { Eye, EyeOff, LogIn, UserPlus, KeyRound, Mail, User, IdCard, CheckCircle2, ShieldAlert, Loader2, GraduationCap } from 'lucide-react';
+import { loginUser, registerUser, resendVerificationEmail, verifyEmailOtp, sendPasswordReset } from '../../services/authService';
 import CaptchaCheckbox from '../CaptchaCheckbox';
 
 export const AUTH_INPUT = 'w-full bg-white text-slate-800 placeholder-slate-400 text-sm px-3.5 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all disabled:bg-slate-50 disabled:opacity-60';
@@ -89,25 +89,6 @@ export function SignInView({ state, setters, onLogin, onClose = () => {}, go }) 
         )}
       </div>
       <AuthSubmitBtn busy={busy} loadingText="Signing in..."><LogIn className="w-4 h-4" /> Sign In to Campus Assistant</AuthSubmitBtn>
-      <div className="pt-1">
-        <p className="text-center text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-2">Or try a demo account</p>
-        <div className="flex flex-col gap-2">
-          {DEMO_ACCOUNTS.map((acc) => (
-            <button key={acc.id} type="button" onClick={() => { setFid(acc.email); setFpw('password123'); setErr(''); }} disabled={busy} className="group flex items-center gap-3 p-2.5 rounded-xl border border-slate-200 hover:border-blue-300 hover:bg-blue-50/60 active:bg-blue-100 transition-all duration-150 text-left">
-              <div className={`w-9 h-9 rounded-xl ${acc.avatarColor} text-white flex items-center justify-center font-bold text-xs shrink-0`}>{acc.initials}</div>
-              <div className="flex-1 min-w-0">
-                <p className="text-xs font-semibold text-slate-800 truncate">{acc.name}</p>
-                <p className="text-[11px] text-slate-500 font-medium truncate">{acc.email} · {acc.role}</p>
-              </div>
-              <ArrowRight className="w-4 h-4 text-slate-300 group-hover:text-blue-500 group-hover:translate-x-0.5 transition-all shrink-0" />
-            </button>
-          ))}
-        </div>
-        <p className="mt-2 text-center text-[11px] text-slate-400">Demo password: <span className="font-semibold text-slate-500">password123</span></p>
-        <p className="mt-1.5 text-center text-[11px] text-slate-400 leading-relaxed">
-          ⚠️ <span className="font-semibold text-slate-500">Exclusive:</span> only enrolled students &amp; faculty staff can use the assistant — the <span className="font-semibold text-amber-600">Applicant</span> demo shows the restricted screen.
-        </p>
-      </div>
     </form>
   );
 }

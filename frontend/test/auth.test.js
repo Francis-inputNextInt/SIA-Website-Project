@@ -1,6 +1,5 @@
 import assert from 'node:assert';
 import {
-  DEMO_ACCOUNTS,
   isValidEmail,
   isValidIdentifier,
   loginUser,
@@ -17,14 +16,7 @@ import {
 
 console.log('--- RUNNING AUTH SERVICE TEST SUITE (Supabase build) ---');
 
-// 1. Demo accounts structure (kept as documentation / quick-preview references)
-console.log('✓ Checking Demo Accounts...');
-assert.ok(Array.isArray(DEMO_ACCOUNTS) && DEMO_ACCOUNTS.length === 5);
-DEMO_ACCOUNTS.forEach((acc) => {
-  assert.ok(acc.name && acc.email && acc.studentId && acc.role && acc.initials);
-});
-
-// 2. Email validation
+// 1. Email validation
 console.log('✓ Checking isValidEmail...');
 assert.strictEqual(isValidEmail('student@campus.edu'), true);
 assert.strictEqual(isValidEmail('STUDENT@CAMPUS.EDU'), true);
@@ -32,26 +24,26 @@ assert.strictEqual(isValidEmail('not-an-email'), false);
 assert.strictEqual(isValidEmail(''), false);
 assert.strictEqual(isValidEmail('user@'), false);
 
-// 3. Identifier validation
+// 2. Identifier validation
 console.log('✓ Checking isValidIdentifier...');
 assert.strictEqual(isValidIdentifier('2024-00842'), true);
 assert.strictEqual(isValidIdentifier('abc'), true);
 assert.strictEqual(isValidIdentifier('ab'), false);
 assert.strictEqual(isValidIdentifier(''), false);
 
-// 4. Personal-email detection
+// 3. Personal-email detection
 console.log('✓ Checking isPersonalEmail...');
 assert.strictEqual(isPersonalEmail('user@gmail.com'), true);
 assert.strictEqual(isPersonalEmail('user@campus.edu'), false);
 
-// 5. Enrolled gate
+// 4. Enrolled gate
 console.log('✓ Checking isEnrolledUser / ALLOWED_ROLES...');
 assert.deepStrictEqual(ALLOWED_ROLES, ['Student', 'Faculty', 'Staff', 'Admin']);
-assert.strictEqual(isEnrolledUser(DEMO_ACCOUNTS[0]), true);   // Student
-assert.strictEqual(isEnrolledUser(DEMO_ACCOUNTS[1]), true);   // Faculty
-assert.strictEqual(isEnrolledUser(DEMO_ACCOUNTS[2]), true);   // Staff
-assert.strictEqual(isEnrolledUser(DEMO_ACCOUNTS[3]), true);   // Admin
-assert.strictEqual(isEnrolledUser(DEMO_ACCOUNTS[4]), false);  // Applicant
+assert.strictEqual(isEnrolledUser({ role: 'Student' }), true);   // Student
+assert.strictEqual(isEnrolledUser({ role: 'Faculty' }), true);   // Faculty
+assert.strictEqual(isEnrolledUser({ role: 'Staff' }), true);   // Staff
+assert.strictEqual(isEnrolledUser({ role: 'Admin' }), true);   // Admin
+assert.strictEqual(isEnrolledUser({ role: 'Applicant' }), false);  // Applicant
 
 // 6. Login validation happens before any Supabase call
 console.log('✓ Test: Missing login credentials throws');
@@ -118,7 +110,7 @@ assert.strictEqual(threwNoSession, true);
 // 11. Session round-trip (in-memory when no browser storage is available)
 console.log('✓ Test: saveUserSession / getCurrentUser / clearUserSession');
 assert.strictEqual(getCurrentUser(), null);
-const mockUser = { ...DEMO_ACCOUNTS[0], loginTimestamp: new Date().toISOString() };
+const mockUser = { id: 'usr_student_01', name: 'Alex Johnson', email: 'student@campus.edu', role: 'Student', loginTimestamp: new Date().toISOString() };
 saveUserSession(mockUser, false);
 assert.strictEqual(getCurrentUser().email, 'student@campus.edu');
 clearUserSession();
