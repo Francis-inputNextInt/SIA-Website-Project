@@ -44,7 +44,6 @@ export default function StaffDashboard({ user, onGoToChat, onGoToProfile, onGoTo
         }),
         getAnnouncements().catch(() => [])
       ]);
-      console.log('[StaffDashboard] loaded students from API:', studs);
       if (reqs && reqs.length > 0) {
         setTickets(reqs.map(r => ({
           id: r.id,

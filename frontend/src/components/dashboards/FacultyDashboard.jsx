@@ -123,6 +123,7 @@ export default function FacultyDashboard({ user, onGoToChat, onGoToProfile, onGo
   const [announcements, setAnnouncements] = useState([]);
   const [grades, setGrades] = useState([]);
   const [students, setStudents] = useState([]);
+  const [studentError, setStudentError] = useState(null);
   const [gradeModalData, setGradeModalData] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
   const [showAnnModal, setShowAnnModal] = useState(false);
@@ -133,16 +134,22 @@ export default function FacultyDashboard({ user, onGoToChat, onGoToProfile, onGo
   const loadData = async () => {
     try {
       setRefreshing(true);
+      setStudentError(null);
       const [anns, grds, stds] = await Promise.all([
         getAnnouncements().catch(() => []),
         getMyGrades().catch(() => []),
-        getFacultyStudents().catch(() => [])
+        getFacultyStudents().catch(err => {
+          console.error('[FacultyDashboard] getFacultyStudents error caught:', err.message);
+          setStudentError(err.message || 'Failed to load students');
+          return [];
+        })
       ]);
       setAnnouncements(anns || []);
       setGrades(grds || []);
       setStudents(stds || []);
     } catch (err) {
       console.error('Failed to load faculty dashboard data:', err);
+      setStudentError(err.message || 'Failed to sync dashboard.');
       setAnnouncements([]);
       setGrades([]);
       setStudents([]);
@@ -238,6 +245,17 @@ export default function FacultyDashboard({ user, onGoToChat, onGoToProfile, onGo
           </div>
         </div>
       </div>
+
+      {studentError && (
+        <div className="p-4 bg-amber-50 border border-amber-200 rounded-2xl flex items-center justify-between gap-3 text-xs text-amber-800">
+          <div>
+            <span className="font-bold">⚠️ Student Fetch Notice:</span> {studentError}. Ensure student profiles are created in Supabase.
+          </div>
+          <button onClick={loadData} className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl font-bold transition-colors">
+            Retry
+          </button>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm">

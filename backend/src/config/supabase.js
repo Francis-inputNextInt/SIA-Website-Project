@@ -13,7 +13,13 @@
  * user-scoped JWTs — GoTrue signs sessions for the end-user, not for the
  * service role.
  */
+import path from 'path';
+import { fileURLToPath } from 'url';
+import dotenv from 'dotenv';
 import { createClient } from '@supabase/supabase-js';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+dotenv.config({ path: path.join(__dirname, '../../.env') });
 
 let adminClient = null;
 
@@ -27,9 +33,12 @@ export function getAdminClient() {
   const supabaseUrl = process.env.SUPABASE_URL;
   const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-  if (!supabaseUrl || !supabaseServiceKey) {
+  const hasUrl = !!supabaseUrl;
+  const hasKey = !!supabaseServiceKey;
+
+  if (!hasUrl || !hasKey) {
     console.warn(
-      '[supabase-config] SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY not set in backend/.env. ' +
+      '[supabase-config] SUPABASE_URL present: ' + hasUrl + ', SUPABASE_SERVICE_ROLE_KEY present: ' + hasKey + '. ' +
       'Server-side Supabase operations are disabled.'
     );
     return null;
@@ -43,4 +52,20 @@ export function getAdminClient() {
   });
 
   return adminClient;
+}
+
+/**
+ * Returns a fresh server-side Supabase service-role client for database queries
+ * that must bypass RLS without sharing auth state with auth.getUser().
+ */
+export function getDbClient() {
+  const supabaseUrl = process.env.SUPABASE_URL;
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!supabaseUrl || !supabaseServiceKey) return null;
+  return createClient(supabaseUrl, supabaseServiceKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false
+    }
+  });
 }

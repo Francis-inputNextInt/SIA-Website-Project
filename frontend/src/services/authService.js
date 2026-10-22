@@ -162,10 +162,10 @@ export function clearUserSession() {
   } catch (err) {
     console.warn('Error clearing session:', err);
   }
-  // Sign out of Supabase (fire-and-forget; clears its persisted tokens).
+  // Sign out of Supabase locally (scope: 'local' avoids background network request race conditions)
   if (supabase) {
-    supabase.auth.signOut().catch((err) => {
-      console.warn('Error signing out of Supabase:', err);
+    supabase.auth.signOut({ scope: 'local' }).catch((err) => {
+      console.warn('Error signing out of Supabase locally:', err);
     });
   }
 }

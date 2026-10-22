@@ -2,7 +2,13 @@
  * AI Campus Assistant — Backend Entry Point
  * Loads environment variables and starts the Express server.
  */
-import 'dotenv/config';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import dotenv from 'dotenv';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+dotenv.config({ path: path.join(__dirname, '../.env') });
+
 import { app } from './app.js';
 
 const PORT = process.env.PORT || 5000;

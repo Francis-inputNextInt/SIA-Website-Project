@@ -1,7 +1,7 @@
 /**
  * Service Request, Announcement, User Management & Log Controllers
  */
-import { getAdminClient } from '../config/supabase.js';
+import { getAdminClient, getDbClient } from '../config/supabase.js';
 import { AppError } from '../utils/appError.js';
 import * as authService from '../services/authService.js';
 
@@ -183,82 +183,28 @@ export async function getAllUsers(req, res, next) {
 export async function getFacultyStudents(req, res, next) {
   try {
     const user = await requireUser(req);
-    console.log('[getFacultyStudents] Request received from user:', user?.email, 'role:', user?.role);
     requireRole(user, ['Faculty', 'Admin', 'Staff']);
-    const supabase = requireClient();
+    const supabase = getDbClient();
     if (!supabase) {
       throw new AppError(500, 'Supabase client is not configured.');
     }
 
-    let { data, error } = await supabase.from('profiles')
-      .select('id, full_name, email, student_id, year_level, department, role')
-      .eq('role', 'Student')
+    const { data, error } = await supabase.from('profiles')
+      .select('id, full_name, email, student_id, year_level, department, role, enrolled')
       .order('full_name', { ascending: true });
 
     if (error) {
-      console.warn('[getFacultyStudents] Supabase query error:', error.message);
+      throw new AppError(400, error.message);
     }
 
-    // If Supabase has no students with role = 'Student', seed real student records into Supabase profiles table
-    if (!data || data.length === 0) {
-      console.log('[getFacultyStudents] No student profiles found in Supabase. Seeding initial student records into Supabase profiles table...');
-      const defaultStudents = [
-        {
-          id: '11111111-1111-1111-1111-111111111111',
-          full_name: 'Juan Dela Cruz',
-          email: 'juan.delacruz@asiatech.edu.ph',
-          student_id: '2026-00101',
-          role: 'Student',
-          department: 'College of Computer Studies',
-          year_level: '3rd Year',
-          avatar_color: 'bg-blue-600',
-          initials: 'JD',
-          enrolled: true
-        },
-        {
-          id: '22222222-2222-2222-2222-222222222222',
-          full_name: 'Maria Santos',
-          email: 'maria.santos@asiatech.edu.ph',
-          student_id: '2026-00102',
-          role: 'Student',
-          department: 'College of Business Administration',
-          year_level: '2nd Year',
-          avatar_color: 'bg-indigo-600',
-          initials: 'MS',
-          enrolled: true
-        },
-        {
-          id: '33333333-3333-3333-3333-333333333333',
-          full_name: 'Jose Rizal',
-          email: 'jose.rizal@asiatech.edu.ph',
-          student_id: '2026-00103',
-          role: 'Student',
-          department: 'College of Engineering',
-          year_level: '4th Year',
-          avatar_color: 'bg-emerald-600',
-          initials: 'JR',
-          enrolled: true
-        }
-      ];
+    // Robust case-insensitive student role filtering (handles 'Student', 'student', 'STUDENT', etc.)
+    const students = (data || []).filter(p => {
+      const r = (p.role || '').trim().toLowerCase();
+      return r === 'student';
+    });
 
-      for (const st of defaultStudents) {
-        await supabase.from('profiles').upsert(st, { onConflict: 'id' });
-      }
-
-      // Re-query Supabase with strict filter
-      const { data: refetched, error: refetchErr } = await supabase.from('profiles')
-        .select('id, full_name, email, student_id, year_level, department, role')
-        .eq('role', 'Student')
-        .order('full_name', { ascending: true });
-      if (!refetchErr && refetched) {
-        data = refetched;
-      }
-    }
-
-    console.log('[getFacultyStudents] Supabase filtered students count (role = Student):', data?.length);
-    res.json({ students: data || [] });
+    res.json({ students });
   } catch (err) {
-    console.error('[getFacultyStudents] Error:', err.message);
     next(err);
   }
 }

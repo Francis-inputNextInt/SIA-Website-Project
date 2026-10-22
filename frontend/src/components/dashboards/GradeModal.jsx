@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { X, Check, RefreshCw, BookOpen } from 'lucide-react';
 
-export default function GradeModal({ gradeData, students, onClose, onSave }) {
+export default function GradeModal({ gradeData, students = [], onClose, onSave }) {
   const [form, setForm] = useState(gradeData?.id ? gradeData : {
     id: null, user_id: '', student_id: '', subject_code: 'CS 101', subject_title: 'Intro to Computing',
     units: 3.0, grade: '1.25', letter_grade: 'A', grading_period: 'Midterm', semester: '1st Semester', academic_year: '2026–2027'
@@ -31,8 +31,8 @@ export default function GradeModal({ gradeData, students, onClose, onSave }) {
               const s = students.find(st => st.id === e.target.value);
               setForm({ ...form, user_id: e.target.value, student_id: s?.student_id || form.student_id });
             }} required className="w-full p-2.5 rounded-xl border border-slate-200 bg-slate-50 text-xs">
-              <option value="">-- Choose Student --</option>
-              {students.map(s => <option key={s.id} value={s.id}>{s.full_name}</option>)}
+              <option value="">-- Choose Student (Supabase) --</option>
+              {students.map(s => <option key={s.id} value={s.id}>{s.full_name} {s.student_id ? `(${s.student_id})` : ''}</option>)}
             </select>
           </div>
           <div className="grid grid-cols-2 gap-3">

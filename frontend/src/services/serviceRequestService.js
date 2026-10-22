@@ -141,14 +141,14 @@ export async function getSystemLogs() {
 }
 
 export async function getFacultyStudents() {
-  try {
-    const data = await apiRequest('/faculty/students');
-    console.log('[serviceRequestService] getFacultyStudents response:', data);
-    return data.students || [];
-  } catch (err) {
-    console.error('[serviceRequestService] getFacultyStudents failed:', err.message);
-    throw err;
-  }
+  const token = await getAccessToken();
+  console.log('[Diagnostic serviceRequestService] getFacultyStudents hasAccessToken:', !!token);
+  const data = await apiRequest('/faculty/students');
+  console.log('[Diagnostic serviceRequestService] getFacultyStudents response shape:', {
+    hasStudentsArray: Array.isArray(data?.students),
+    studentCount: data?.students?.length || 0
+  });
+  return data.students || [];
 }
 
 export async function getMyGrades() {
